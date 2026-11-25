@@ -22,4 +22,9 @@
     <ProjectReference Include="..\..\src\GrepWinUi.Core\GrepWinUi.Core.csproj" />
   </ItemGroup>
 
+  <!-- Standard data files of the App, to check they match the built-in defaults -->
+  <ItemGroup>
+    <None Include="..\..\src\GrepWinUi.App\Defaults\**" LinkBase="Defaults" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

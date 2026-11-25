@@ -69,8 +69,14 @@ tests/lib_SaveAndLoad.Tests/ xUnit tests for lib_SaveAndLoad (temp folders only)
   - **`lib_CommandLine`:** same approach. A `lib_` library does the parsing; the program only
     defines its command line items.
 - Program-specific definition classes (only content items, no UI) live in Core under `AppData/`:
-  `src/GrepWinUi.Core/AppData/Config/` (config classes, `IStorable`) and
-  `src/GrepWinUi.Core/AppData/CommandLine/` (command line item definitions).
+  - `AppData/Config/`: user settings (`AppConfig` → `Config.json`, with `ResultViewOptions`).
+    Standard data file: `src/GrepWinUi.App/Defaults/Config.json` (copied to `<exe>\Defaults\`);
+    a test checks it equals the built-in defaults, so keep both in sync.
+  - `AppData/Session/`: state that changes often and must survive a restart
+    (`LastUsedFiles` → `LastUsed.json`: last query/result/HTML file, fallback to the newest one).
+  - `AppData/CommandLine/`: command line item definitions.
+- A new result form starts with a **copy** of the current config settings
+  (`config.ResultView with { }`), incl. the Keep lines (prepared lines before/after a match).
   The reusable mechanics stay in the `lib_` projects. No global "main" object: `Program.cs` / `MainForm`
   create the store and the config and pass them on.
 - Before each feature step: read the matching code in `..\netGrepWin` (read only)
@@ -142,7 +148,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–7 are done.
+One step = one session. Steps 1–8 are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -152,7 +158,9 @@ One step = one session. Steps 1–7 are done.
 1. [x] Main MDI window: all menus from the screenshots, status bar layout with all fields
        from "UI spec: status bar" (placeholder texts), No "Ctrl Shift F6" toolbar; no functions
 1. [x] `lib_SaveAndLoad` library for reading/writing class objects (classes only define their content items)
-1. [ ] Config: settings model using `lib_SaveAndLoad`, JSON in `%AppData%\GrepWinUi\`, shared defaults copied for a new user
+1. [x] Config: settings model using `lib_SaveAndLoad`, JSON in `%AppData%\GrepWinUi\`, standard data file
+       in `Defaults`, read when no user file exists
+1. [ ] Create code for first config menu item now named settings instead
 1. [ ] Recent-first list: newest on top, duplicates move to top, size limit, saved to disk (tested)
 1. [ ] Search query model: search string, file types, folders, all options; list of past queries
 1. [ ] Search properties form: all inputs from `searchForm.png`, dropdowns filled from the lists; no search
@@ -173,9 +181,10 @@ One step = one session. Steps 1–7 are done.
 1. [ ] `lib_CommandLine` library for command line parsing (program only defines its items)
 1. [ ] Command line
 
+
 Ideas for later (not planned): ZIP search, printing, Explorer right-click entry,
 fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 8: Config (settings model using `lib_SaveAndLoad`, standard data file in `Defaults`).
+Step 9: Create code for config menu items one by one.

@@ -14,4 +14,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <!-- Standard data files (one per stored class), read when no user file exists -->
+  <ItemGroup>
+    <None Update="Defaults\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

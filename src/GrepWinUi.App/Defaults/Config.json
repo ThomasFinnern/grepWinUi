@@ -1,0 +1,21 @@
+{
+  "OpenSearchFormOnStart": false,
+  "RepeatLastSearchOnStart": false,
+  "ReopenLastSearchesOnStart": false,
+  "ShowLastResultOnStart": false,
+  "ShowFileNamesWhileSearching": true,
+  "ShowProgressInPercent": false,
+  "ResultView": {
+    "KeepLinesBefore": 0,
+    "KeepLinesAfter": 0,
+    "ShowLinesBefore": 0,
+    "ShowLinesAfter": 0,
+    "ShowTitle": true,
+    "ShowLineNumbers": true,
+    "FixedFont": true,
+    "ShowFileNames": true,
+    "ShowFileContents": true,
+    "ShowWholeLine": true,
+    "ShowDoubleBlanks": false
+  }
+}

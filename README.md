@@ -12,6 +12,9 @@ redesign from start with the help of AI
 - **Menu bar:** File, Search, View, Options, Tools, Windows, Help (Help on the right).
   Items marked with `*` have no function yet.
 - **Status bar:** Title, Info, Working (progress bar), Folder, Files, Time. Shows dummy texts for now.
+- **Settings:** stored per user in `%AppData%\GrepWinUi\Config.json` (no admin rights needed).
+  Until you change a setting, the standard values from `Defaults\Config.json` next to the exe are used.
+  Settings are loaded on start; they can't be changed in the program yet.
 
 ## Build and run
 
