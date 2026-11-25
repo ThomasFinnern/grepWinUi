@@ -122,14 +122,14 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–5 are done.
+One step = one session. Steps 1–6 are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
 1. [x] Planning the reimplementation (see Architecture)
 1. [x] Skeleton: solution, Core/App/Tests projects, empty window that starts, `.gitignore`;
        add build/run/test commands to this file
-1. [ ] Main MDI window: all menus from the screenshots (done), status bar layout with all fields
+1. [x] Main MDI window: all menus from the screenshots, status bar layout with all fields
        from "UI spec: status bar" (placeholder texts), No "Ctrl Shift F6" toolbar; no functions
 1. [ ] Config: settings model, JSON in `%AppData%\GrepWinUi\`, shared defaults copied for a new user
 1. [ ] Recent-first list: newest on top, duplicates move to top, size limit, saved to disk (tested)
@@ -156,4 +156,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 6: Main MDI window: status bar layout (menus done; no toolbar; no functions).
+Step 7: Config (settings model, JSON in `%AppData%\GrepWinUi\`, shared defaults copied for a new user).
