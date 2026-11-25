@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This project will reimplement the functions in former project netGrepWin from scratch. 
 
 ## Repository state
-- Solution `GrepWinUi.slnx` with `src/GrepWinUi.Core`, `src/GrepWinUi.App`, `tests/GrepWinUi.Core.Tests`
-  (see Architecture). Commands, run from the repo root:
+- Solution `GrepWinUi.slnx` with `src/GrepWinUi.Core`, `src/GrepWinUi.App`, `src/lib_SaveAndLoad`
+  and the test projects in `tests/` (see Architecture). Commands, run from the repo root:
   - Build: `dotnet build GrepWinUi.slnx`
   - Test: `dotnet test GrepWinUi.slnx`
   - Run: `dotnet run --project src/GrepWinUi.App`
@@ -45,12 +45,15 @@ GrepWinUi.slnx
 src/GrepWinUi.Core/          class library (net10.0, no UI): search, query model,
                              recent-first lists, config, result files, HTML building
 src/GrepWinUi.App/           WinForms (net10.0-windows): MDI window, forms, WebView2
+src/lib_SaveAndLoad/         library (net10.0, namespace SaveAndLoad): save/load objects as JSON
 tests/GrepWinUi.Core.Tests/  xUnit tests for Core
+tests/lib_SaveAndLoad.Tests/ xUnit tests for lib_SaveAndLoad (temp folders only)
 ```
 - All logic lives in Core so it can be tested; App only wires up forms.
 - Tests: **xUnit**.
-- Config: JSON (`System.Text.Json`) in `%AppData%\GrepWinUi\`. A shared default file next to
-  the exe is copied for a new user. No group configs for now.
+- Config: JSON (`System.Text.Json`) in `%AppData%\GrepWinUi\`. Standard data files in a
+  `Defaults` folder next to the exe (one per stored class) are read when no user file exists;
+  they are not copied, the user file is written on the first save. No group configs for now.
 - Result files: own new JSON format; no reading of old `*.Res` files (import maybe later).
 - UI: classic MDI child windows, as in the old program.
 - Reusable libraries live in their own projects in folders starting with `lib_`
@@ -58,8 +61,18 @@ tests/GrepWinUi.Core.Tests/  xUnit tests for Core
   - **`lib_SaveAndLoad`, read/write of class objects:** many classes are written to and read from disk
     (config, query lists, results, …). A `lib_` library does the reading and writing;
     each such class derives from / uses it and only defines its content items.
+    Design (done): a class implements `IStorable` (declares `static string FileName`) and has
+    only properties with default values; lists derive from `StoredList<TItem>`.
+    `ObjectStore(StorageFolders)` does `Load<T>()` (user file → defaults file → `new T()`, never
+    throws, problem text in `LoadResult`) and `Save<T>()` (temp file then replace; throws `IOException`).
+    No UI in the library: the App decides what to show. No ties to the old LibConfig.
   - **`lib_CommandLine`:** same approach. A `lib_` library does the parsing; the program only
     defines its command line items.
+- Program-specific definition classes (only content items, no UI) live in Core under `AppData/`:
+  `src/GrepWinUi.Core/AppData/Config/` (config classes, `IStorable`) and
+  `src/GrepWinUi.Core/AppData/CommandLine/` (command line item definitions).
+  The reusable mechanics stay in the `lib_` projects. No global "main" object: `Program.cs` / `MainForm`
+  create the store and the config and pass them on.
 - Before each feature step: read the matching code in `..\netGrepWin` (read only)
   and add short notes to `doc/netGrepWin/`.
 
@@ -129,7 +142,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–6 are done.
+One step = one session. Steps 1–7 are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -138,7 +151,7 @@ One step = one session. Steps 1–6 are done.
        add build/run/test commands to this file
 1. [x] Main MDI window: all menus from the screenshots, status bar layout with all fields
        from "UI spec: status bar" (placeholder texts), No "Ctrl Shift F6" toolbar; no functions
-1. [ ] `lib_SaveAndLoad` library for reading/writing class objects (classes only define their content items)
+1. [x] `lib_SaveAndLoad` library for reading/writing class objects (classes only define their content items)
 1. [ ] Config: settings model using `lib_SaveAndLoad`, JSON in `%AppData%\GrepWinUi\`, shared defaults copied for a new user
 1. [ ] Recent-first list: newest on top, duplicates move to top, size limit, saved to disk (tested)
 1. [ ] Search query model: search string, file types, folders, all options; list of past queries
@@ -165,4 +178,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 7: `lib_SaveAndLoad` library for reading/writing class objects.
+Step 8: Config (settings model using `lib_SaveAndLoad`, standard data file in `Defaults`).
