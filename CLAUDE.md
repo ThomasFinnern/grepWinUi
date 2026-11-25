@@ -53,6 +53,13 @@ tests/GrepWinUi.Core.Tests/  xUnit tests for Core
   the exe is copied for a new user. No group configs for now.
 - Result files: own new JSON format; no reading of old `*.Res` files (import maybe later).
 - UI: classic MDI child windows, as in the old program.
+- Reusable libraries live in their own projects in folders starting with `lib_`
+  (`src/lib_SaveAndLoad/`, `src/lib_CommandLine/`):
+  - **`lib_SaveAndLoad`, read/write of class objects:** many classes are written to and read from disk
+    (config, query lists, results, …). A `lib_` library does the reading and writing;
+    each such class derives from / uses it and only defines its content items.
+  - **`lib_CommandLine`:** same approach. A `lib_` library does the parsing; the program only
+    defines its command line items.
 - Before each feature step: read the matching code in `..\netGrepWin` (read only)
   and add short notes to `doc/netGrepWin/`.
 
@@ -131,7 +138,8 @@ One step = one session. Steps 1–6 are done.
        add build/run/test commands to this file
 1. [x] Main MDI window: all menus from the screenshots, status bar layout with all fields
        from "UI spec: status bar" (placeholder texts), No "Ctrl Shift F6" toolbar; no functions
-1. [ ] Config: settings model, JSON in `%AppData%\GrepWinUi\`, shared defaults copied for a new user
+1. [ ] `lib_SaveAndLoad` library for reading/writing class objects (classes only define their content items)
+1. [ ] Config: settings model using `lib_SaveAndLoad`, JSON in `%AppData%\GrepWinUi\`, shared defaults copied for a new user
 1. [ ] Recent-first list: newest on top, duplicates move to top, size limit, saved to disk (tested)
 1. [ ] Search query model: search string, file types, folders, all options; list of past queries
 1. [ ] Search properties form: all inputs from `searchForm.png`, dropdowns filled from the lists; no search
@@ -149,6 +157,7 @@ One step = one session. Steps 1–6 are done.
 1. [ ] Replace
 1. [ ] Search in found files, "search again" key
 1. [ ] Options dialog: config editor, CSS colors
+1. [ ] `lib_CommandLine` library for command line parsing (program only defines its items)
 1. [ ] Command line
 
 Ideas for later (not planned): ZIP search, printing, Explorer right-click entry,
@@ -156,4 +165,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 7: Config (settings model, JSON in `%AppData%\GrepWinUi\`, shared defaults copied for a new user).
+Step 7: `lib_SaveAndLoad` library for reading/writing class objects.
