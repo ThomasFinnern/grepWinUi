@@ -8,7 +8,9 @@ redesign from start with the help of AI
 
 ## Features
 
-- **Main window:** starts an empty window titled "grepWinUi" plus version. (Menus and search follow.)
+- **Main window:** an MDI window titled "grepWinUi" plus version, which will hold the search forms.
+- **Menu bar:** File, Search, View, Options, Tools, Windows, Help (Help on the right).
+  Items marked with `*` have no function yet.
 
 ## Build and run
 

@@ -59,6 +59,8 @@ tests/GrepWinUi.Core.Tests/  xUnit tests for Core
 - Keep functions small and pure where possible; no global state.
 - Update README.md with each new feature, in the same step: a short user-facing description
   (what it does, where to find it: menu entry, key or command line option) under a "Features" section.
+- Menu items without a working function get a `*` in front of their text (e.g. `*Open...`).
+  Remove the `*` in the step that makes the function work.
 
 ## How to work with me
 - I build this in small steps. Do ONE step at a time, then stop.
@@ -113,7 +115,7 @@ One step = one session. Steps 1–5 are done.
 1. [x] Planning the reimplementation (see Architecture)
 1. [x] Skeleton: solution, Core/App/Tests projects, empty window that starts, `.gitignore`;
        add build/run/test commands to this file
-1. [ ] Main MDI window: all menus from the screenshots, status bar, "Ctrl Shift F6" toolbar;
+1. [ ] Main MDI window: all menus from the screenshots, status bar, No "Ctrl Shift F6" toolbar;
        no functions
 1. [ ] Config: settings model, JSON in `%AppData%\GrepWinUi\`, shared defaults copied for a new user
 1. [ ] Recent-first list: newest on top, duplicates move to top, size limit, saved to disk (tested)
