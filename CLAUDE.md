@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# Code restart for a grep UI project with search forms 
+# Code restart for a grep UI project grepWinUi with search forms 
 
 This project will reimplement the functions in former project netGrepWin from scratch. 
 
@@ -30,14 +30,32 @@ This project will reimplement the functions in former project netGrepWin from sc
 - Store config in the user profile (`%AppData%`), never in the program folder, so no admin rights are needed.
 - The new project does not reference the old project's code (.NET Framework 2.0 / 3.5 / 4.5);
   copy its logic over instead (search, regex, query lists).
-  The old project itself only gets the config-location fix (see Roadmap).
+  Development of the old project is finished: read its code, never change or run it.
 - Target framework `net10.0-windows`. Any SDK ≥ 10 can build it; the dev PC has SDK 11.0.100
   plus the 10.0 and 11.0 WindowsDesktop runtimes. Also needed: the VS Code "C#" extension.
+
+## Architecture (planned 2026-11-25)
+```
+GrepWinUi.slnx
+src/GrepWinUi.Core/          class library (net10.0, no UI): search, query model,
+                             recent-first lists, config, result files, HTML building
+src/GrepWinUi.App/           WinForms (net10.0-windows): MDI window, forms, WebView2
+tests/GrepWinUi.Core.Tests/  xUnit tests for Core
+```
+- All logic lives in Core so it can be tested; App only wires up forms.
+- Tests: **xUnit**.
+- Config: JSON (`System.Text.Json`) in `%AppData%\GrepWinUi\`. A shared default file next to
+  the exe is copied for a new user. No group configs for now.
+- Result files: own new JSON format; no reading of old `*.Res` files (import maybe later).
+- UI: classic MDI child windows, as in the old program.
+- Before each feature step: read the matching code in `..\netGrepWin` (read only)
+  and add short notes to `doc/netGrepWin/`.
 
 ## Conventions
 - Explicit types on public members, short XML doc comments (`///`).
 - Keep functions small and pure where possible; no global state.
-- Update README.md with each new functionality
+- Update README.md with each new feature, in the same step: a short user-facing description
+  (what it does, where to find it: menu entry, key or command line option) under a "Features" section.
 
 ## How to work with me
 - I build this in small steps. Do ONE step at a time, then stop.
@@ -75,33 +93,44 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 * 
 * 
 
+## Running the old program for tests
+
+- When coded: A rerun of the exe starts with the last search window(s) open again (`ReopenFiles.txt`,
+  `SearchResult.Res` in `%AppData%\NetGrepWin\Config`; the result file can be large, so the main window
+  may take 10+ s to appear).
+- Before testing menus: use **Exit** on that reopened search form. Then one form, the last search result
+  form, is active in the MDI window, and all menus and functions can be used.
+
 
 ## Roadmap
-1. [ ] Old project: can it be compiled without a Visual Studio license?
-       (targets .NET Framework 2.0 / 3.5 / 4.5; try the free Windows MSBuild
-       `C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe` or the free VS Build Tools)
-1. [ ] Old project, if it compiles: move the config file locations out of the program folder
-       (e.g. to `%AppData%`) so it runs without administrator rights.
-       This is the only change planned for the old project.
+One step = one session. Steps 1–4 are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
-1. [x] Install .NET SDK (11.0.100 installed) 
-1. [ ] Install VS Code "C#" extension
-1. [ ] Outer main window with all menu items, no functionality
-1. [ ] Planning 
-1. [ ] Plan extraction of netgrepwin exe program information
-1. [ ] Extract netgrepwin exe program information into a file which will be read on Claude start
-1. [ ] Defining tools
-1. [ ] Planning 
-1. [ ] 
-1. [ ]  
-1. [ ]  
-1. [ ]  
-1. [ ]  
-1. [ ]  
-1. [ ]  
-1. [ ]  
-1. [ ]  
+1. [x] Install .NET SDK (11.0.100 installed)
+1. [x] Install VS Code "C#" extension
+1. [x] Planning the reimplementation (see Architecture)
+1. [ ] Skeleton: solution, Core/App/Tests projects, empty window that starts, `.gitignore`;
+       add build/run/test commands to this file
+1. [ ] Main MDI window: all menus from the screenshots, status bar, "Ctrl Shift F6" toolbar;
+       no functions
+1. [ ] Config: settings model, JSON in `%AppData%\GrepWinUi\`, shared defaults copied for a new user
+1. [ ] Recent-first list: newest on top, duplicates move to top, size limit, saved to disk (tested)
+1. [ ] Search query model: search string, file types, folders, all options; list of past queries
+1. [ ] Search properties form: all inputs from `searchForm.png`, dropdowns filled from the lists; no search
+1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
+       (regex, whole word, match case, lines before/after); async, cancellable, progress
+1. [ ] Result form: header line with view options, two WebView2 panes; HTML/CSS built in Core
+1. [ ] Connect search to results: start/cancel, progress and statistics in the status bar
+1. [ ] Result clicks: click on a file jumps to its lines; double click opens the "show file" form
+1. [ ] Save/open search results and the recent result files list (File menu)
+1. [ ] Reopen the last forms on start
+1. [ ] Replace
+1. [ ] Search in found files, "search again" key
+1. [ ] Options dialog: config editor, CSS colors
+1. [ ] Command line
+
+Ideas for later (not planned): ZIP search, printing, Explorer right-click entry,
+fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 1.
+Step 5: Skeleton.

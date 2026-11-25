@@ -90,7 +90,7 @@ ideas for further development:
   right side config section parameter
 * Search string list: Handle last users search strings items 
 * Search string list: Handle last users search file strings items 
-* 
+* Enable to change the html classes with color picker and ...
 
 #### Menu View
 
