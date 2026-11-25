@@ -26,7 +26,7 @@ internal static class MainMenu
         MenuStrip menuStrip = new();
         menuStrip.Items.AddRange(new ToolStripItem[]
         {
-            CreateFileMenu(),
+            CreateFileMenu(actions),
             CreateSearchMenu(),
             CreateViewMenu(),
             CreateOptionsMenu(actions),
@@ -38,7 +38,7 @@ internal static class MainMenu
         return menuStrip;
     }
 
-    private static ToolStripMenuItem CreateFileMenu() => Menu("&File",
+    private static ToolStripMenuItem CreateFileMenu(MainMenuActions actions) => Menu("&File",
         Item("New search query", Keys.Control | Keys.N),
         Item("Open search query", Keys.Control | Keys.O),
         Item("Save search query", Keys.Alt | Keys.S),
@@ -58,7 +58,7 @@ internal static class MainMenu
         Menu("Last used search queries", EmptyListItem()),
         Menu("Last used search files", EmptyListItem()),
         Separator(),
-        Item("Exit"));
+        Item("Exit", onClick: actions.ExitApp));
 
     private static ToolStripMenuItem CreateSearchMenu() => Menu("&Search",
         Item("Search", Keys.Control | Keys.F),
@@ -123,4 +123,5 @@ internal static class MainMenu
 
 /// <summary>Handlers for implemented menu items.</summary>
 /// <param name="OpenSettings">Options → Settings.</param>
-internal sealed record MainMenuActions(Action OpenSettings);
+/// <param name="ExitApp">File → Exit.</param>
+internal sealed record MainMenuActions(Action OpenSettings, Action ExitApp);

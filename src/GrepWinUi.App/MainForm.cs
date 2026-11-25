@@ -25,7 +25,7 @@ public sealed class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         IsMdiContainer = true;
 
-        MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(OpenSettings));
+        MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(OpenSettings, ExitApp));
         MainMenuStrip = menuStrip;
         Controls.Add(menuStrip);
         Controls.Add(new MainStatusBar());
@@ -33,6 +33,9 @@ public sealed class MainForm : Form
 
     /// <summary>User settings; new result forms start with a copy of <see cref="AppConfig.ResultView"/>.</summary>
     internal AppConfig Config { get; private set; }
+
+    /// <summary>File → Exit: closes the main window and ends the program.</summary>
+    private void ExitApp() => Close();
 
     /// <summary>Options → Settings: edit and save the settings.</summary>
     private void OpenSettings()

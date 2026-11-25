@@ -14,6 +14,7 @@ redesign from start with the help of AI
 - **Status bar:** Title, Info, Working (progress bar), Folder, Files, Time. Shows dummy texts for now.
 - **Settings:** stored per user in `%AppData%\GrepWinUi\Config.json` (no admin rights needed).
   Until you change a setting, the standard values from `Defaults\Config.json` next to the exe are used.
+- **File → Exit:** closes the program.
 - **Options → Settings:** edit the settings on three pages (Search result view, While searching,
   On start of program). **Save** writes `Config.json`, **Cancel** discards all changes.
   New result forms start with a copy of these settings.
