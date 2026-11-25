@@ -157,7 +157,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–11 are done.
+One step = one session. Steps 1–12 are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -173,11 +173,16 @@ One step = one session. Steps 1–11 are done.
 1. [x] Recent-first list (`lib_RecentList`): newest on top, duplicates move to top, size limit, saved to disk (tested)
 1. [x] Search result child form (MDI child): layout of header line with view options and the two
        result panes (file list, matching lines) with dummy content; File → New opens one; no search yet
-1. [ ] Result form: header line with view options, two WebView2 panes; HTML/CSS built in Core: basics
+1. [x] Result form: header line with view options, two WebView2 panes; HTML/CSS built in Core: basics
+1. [ ] Search query model: search string, file types, folders, all options; list of past queries
+1. [ ] Search properties form: all inputs from `searchForm.png`, dropdowns filled from the lists; no search.
+       Opened with Search → Search (Ctrl+F) as a popup (modal dialog) over the active result form;
+       it is filled with that form's current search data and writes the changes back to it.
+       Without an active result form a new one is created first.
+       On program start it opens automatically for the latest created result form data
+       if "Open search form" is set in Settings (On start of program).
 1. [ ] Options menu: "Search string lists", "Search files spec. list", "Search folder list"
        (edit the recent-first lists)
-1. [ ] Search query model: search string, file types, folders, all options; list of past queries
-1. [ ] Search properties form: all inputs from `searchForm.png`, dropdowns filled from the lists; no search
 1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
        (regex, whole word, match case, lines before/after); async, cancellable, progress
 1. [ ] Result form: two WebView2 panes; HTML/CSS built in Core: fill with search data, style like in old project with classes
@@ -202,4 +207,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 12: Options menu "Search string lists", "Search files spec. list", "Search folder list".
+Step 13: Search query model (data behind the search form).
