@@ -7,8 +7,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This project will reimplement the functions in former project netGrepWin from scratch. 
 
 ## Repository state
-- No source code yet: `src/` is empty, and there are no build, lint or test commands.
-  Add them here once the first project is created (see Technology).
+- Solution `GrepWinUi.slnx` with `src/GrepWinUi.Core`, `src/GrepWinUi.App`, `tests/GrepWinUi.Core.Tests`
+  (see Architecture). Commands, run from the repo root:
+  - Build: `dotnet build GrepWinUi.slnx`
+  - Test: `dotnet test GrepWinUi.slnx`
+  - Run: `dotnet run --project src/GrepWinUi.App`
 - `doc/netGrepWin/` holds the description of the old program (`netGrepWin.code.md`)
   and UI screenshots (`*Menu.png`, `searchForm*.png`, `MdiFormWithResultsForm.png`).
   This is the main spec for the reimplementation.
@@ -103,12 +106,12 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–4 are done.
+One step = one session. Steps 1–5 are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
 1. [x] Planning the reimplementation (see Architecture)
-1. [ ] Skeleton: solution, Core/App/Tests projects, empty window that starts, `.gitignore`;
+1. [x] Skeleton: solution, Core/App/Tests projects, empty window that starts, `.gitignore`;
        add build/run/test commands to this file
 1. [ ] Main MDI window: all menus from the screenshots, status bar, "Ctrl Shift F6" toolbar;
        no functions
@@ -133,4 +136,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 5: Skeleton.
+Step 6: Main MDI window (menus, status bar, toolbar; no functions).
