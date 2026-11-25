@@ -56,6 +56,18 @@ tests/GrepWinUi.Core.Tests/  xUnit tests for Core
 - Before each feature step: read the matching code in `..\netGrepWin` (read only)
   and add short notes to `doc/netGrepWin/`.
 
+## UI spec: status bar (main window)
+Fields from left to right:
+- **Title:** abbreviated info about the current task.
+- **Info:** longer text about the current task or its result. Takes the remaining space.
+- **Working:** progress bar (old name "Actual Info").
+  - If enabled in config: shows in % how many files are done out of all files.
+  - Otherwise: a running "up and down" animation (marquee) while an action runs.
+- **Folder:** folder being searched, only its last name in the folder tree
+  (e.g. `e:\wamp64\www\api_6x` shows `api_6x`).
+- **Files:** count of files read so far / all files, e.g. `12 / 57`.
+- **Time:** elapsed time, counting up while a search runs.
+
 ## Conventions
 - Explicit types on public members, short XML doc comments (`///`).
 - Keep functions small and pure where possible; no global state.
@@ -117,8 +129,8 @@ One step = one session. Steps 1–5 are done.
 1. [x] Planning the reimplementation (see Architecture)
 1. [x] Skeleton: solution, Core/App/Tests projects, empty window that starts, `.gitignore`;
        add build/run/test commands to this file
-1. [ ] Main MDI window: all menus from the screenshots, status bar, No "Ctrl Shift F6" toolbar;
-       no functions
+1. [ ] Main MDI window: all menus from the screenshots (done), status bar layout with all fields
+       from "UI spec: status bar" (placeholder texts), No "Ctrl Shift F6" toolbar; no functions
 1. [ ] Config: settings model, JSON in `%AppData%\GrepWinUi\`, shared defaults copied for a new user
 1. [ ] Recent-first list: newest on top, duplicates move to top, size limit, saved to disk (tested)
 1. [ ] Search query model: search string, file types, folders, all options; list of past queries
@@ -126,7 +138,11 @@ One step = one session. Steps 1–5 are done.
 1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
        (regex, whole word, match case, lines before/after); async, cancellable, progress
 1. [ ] Result form: header line with view options, two WebView2 panes; HTML/CSS built in Core
-1. [ ] Connect search to results: start/cancel, progress and statistics in the status bar
+1. [ ] Connect search to results: start/cancel
+1. [ ] Status bar Title and Info: short and long text about the current task / result
+1. [ ] Status bar Working: % of files done (config option, needs the file count before searching),
+       otherwise marquee animation while an action runs
+1. [ ] Status bar Folder (last folder name), Files (read / all) and Time (counting while a search runs)
 1. [ ] Result clicks: click on a file jumps to its lines; double click opens the "show file" form
 1. [ ] Save/open search results and the recent result files list (File menu)
 1. [ ] Reopen the last forms on start
@@ -140,4 +156,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 6: Main MDI window (menus, status bar, toolbar; no functions).
+Step 6: Main MDI window: status bar layout (menus done; no toolbar; no functions).

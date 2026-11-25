@@ -11,6 +11,7 @@ redesign from start with the help of AI
 - **Main window:** an MDI window titled "grepWinUi" plus version, which will hold the search forms.
 - **Menu bar:** File, Search, View, Options, Tools, Windows, Help (Help on the right).
   Items marked with `*` have no function yet.
+- **Status bar:** Title, Info, Working (progress bar), Folder, Files, Time. Shows dummy texts for now.
 
 ## Build and run
 

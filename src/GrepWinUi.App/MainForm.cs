@@ -18,5 +18,6 @@ public sealed class MainForm : Form
         MenuStrip menuStrip = MainMenu.Create();
         MainMenuStrip = menuStrip;
         Controls.Add(menuStrip);
+        Controls.Add(new MainStatusBar());
     }
 }
