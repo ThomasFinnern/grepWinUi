@@ -4,16 +4,46 @@ Version c# Visual Studio 15
 
 ## programm to start 
 
-For test runs
+For test runs but needs admi n rights
 "C:\Program Files\NetGrepWin\NetGrepWin.exe"
 
-## files
+## code files
 netGrepWin lives in its own folder ..\..\..\netGrepWin
 
-common libraries in root folders: lib*
-programm libraries in  NetGrepWin subfolder folders: lib*
-programm real config and commandline definitions in NetGrepWin\Program
-the *god* object containing all object is ni NetGrepWin\Program\MainGlobal\clsMainGlobal.cs
+* common libraries in root folders: lib*
+* programm libraries in  NetGrepWin subfolder folders: lib*
+* programm real config and commandline definitions in NetGrepWin\Program
+* the *god* object containing all object is ni NetGrepWin\Program\MainGlobal\clsMainGlobal.cs
+
+## General features List
+
+* Colored search results
+* Multiple forms in application so you may keep similar searches side by side
+* Replacing as well as searching
+* Use of regex (C# style)
+* 'Search again' Key
+* Saving of search results
+* Saving and retrieval of search criteria
+* Command line interface 
+* Saving and retrieval of search criteria
+* Click on above file list results will open complete file with highlighted search results (No edit changes possible though)
+* 
+
+### Drawbacks (06.01.2021)
+
+Not fixed yet: 
+* Results are not asynchron displayed and the screen freezes while searching
+* Due to pre c# asyn functions the result is sometimes displayed but not acceptet -> After popup Question the results vanish but can be retrieved without search again
+* Needs administrator rights due to read of config files from program folder
+
+#### Missing features of "Windows grep"
+
+ideas for further development:
+* Printing of search results
+* Fully multi-tasking
+* ZIP file searching
+* Delimited and fixed width data file searching at field-level.
+* File Explorer Extension right click
 
 ## layout
 
