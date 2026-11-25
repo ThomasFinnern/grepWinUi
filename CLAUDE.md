@@ -12,6 +12,8 @@ This project will reimplement the functions in former project netGrepWin from sc
   - Build: `dotnet build GrepWinUi.slnx`
   - Test: `dotnet test GrepWinUi.slnx`
   - Run: `dotnet run --project src/GrepWinUi.App`
+  - Batch wrappers in `build\` (`build_debug.bat`, `build_release.bat`, …) all call `build\build.bat`.
+  - A running grepWinUi window locks `bin\Debug`; close it before building.
 - `doc/netGrepWin/` holds the description of the old program (`netGrepWin.code.md`)
   and UI screenshots (`*Menu.png`, `searchForm*.png`, `MdiFormWithResultsForm.png`).
   This is the main spec for the reimplementation.

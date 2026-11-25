@@ -10,6 +10,7 @@ public sealed class MainForm : Form
     {
         Version version = typeof(MainForm).Assembly.GetName().Version ?? new Version(0, 0, 0);
         Text = AppInfo.MainWindowTitle(version);
+        Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         Size = new Size(1000, 750);
         StartPosition = FormStartPosition.CenterScreen;
         IsMdiContainer = true;

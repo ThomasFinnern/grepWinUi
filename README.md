@@ -20,7 +20,10 @@ Needs the free .NET SDK 10 or newer (no Visual Studio needed). From the reposito
 dotnet build GrepWinUi.slnx
 dotnet test GrepWinUi.slnx
 dotnet run --project src/GrepWinUi.App
-``` 
+```
+
+Or use the batch files in `build\`: `build_debug.bat`, `build_release.bat`, plus `_rebuild`, `_clean`
+and `_detailed` variants. All of them call `build.bat [Debug|Release] [extra args]`. 
 
 
 
