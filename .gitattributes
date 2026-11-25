@@ -1,0 +1,5 @@
+# Normalize text files to LF in the repository; Git converts to CRLF on checkout (core.autocrlf)
+* text=auto
+
+# Binary files: never convert
+*.png binary
