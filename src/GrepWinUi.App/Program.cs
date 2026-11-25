@@ -20,6 +20,6 @@ internal static class Program
             MessageBox.Show(config.Problem, AppInfo.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
-        Application.Run(new MainForm(config.Value));
+        Application.Run(new MainForm(config.Value, store));
     }
 }

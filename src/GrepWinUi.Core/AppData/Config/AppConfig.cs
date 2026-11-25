@@ -1,3 +1,4 @@
+using System.Text.Json;
 using SaveAndLoad;
 
 namespace GrepWinUi.Core.AppData.Config;
@@ -34,4 +35,8 @@ public sealed class AppConfig : IStorable
 
     /// <summary>Standard view options; each new result form starts with a copy.</summary>
     public ResultViewOptions ResultView { get; set; } = new();
+
+    /// <summary>Independent deep copy (e.g. for editing in a dialog).</summary>
+    public AppConfig Copy() =>
+        JsonSerializer.Deserialize<AppConfig>(JsonSerializer.Serialize(this))!;
 }

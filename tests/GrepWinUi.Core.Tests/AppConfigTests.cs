@@ -68,6 +68,22 @@ public sealed class AppConfigTests : IDisposable
     }
 
     [Fact]
+    public void Copy_IsDeepAndIndependent()
+    {
+        AppConfig original = new() { ShowProgressInPercent = true };
+        original.ResultView.KeepLinesAfter = 4;
+
+        AppConfig copy = original.Copy();
+        copy.ShowProgressInPercent = false;
+        copy.ResultView.KeepLinesAfter = 9;
+
+        Assert.True(original.ShowProgressInPercent);
+        Assert.Equal(4, original.ResultView.KeepLinesAfter);
+        Assert.Equal(9, copy.ResultView.KeepLinesAfter);
+        Assert.NotSame(original.ResultView, copy.ResultView);
+    }
+
+    [Fact]
     public void ResultViewCopy_IsIndependentOfConfig()
     {
         AppConfig config = new();

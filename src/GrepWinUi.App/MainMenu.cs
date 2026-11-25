@@ -5,8 +5,8 @@ namespace GrepWinUi.App;
 /// <summary>Builds the main menu bar (File, Search, View, Options, Tools, Windows, Help).</summary>
 internal static class MainMenu
 {
-    /// <summary>Creates the menu bar. No item has a function yet, so all items are marked with "*".</summary>
-    public static MenuStrip Create()
+    /// <summary>Creates the menu bar. Items without a handler in <paramref name="actions"/> are marked with "*".</summary>
+    public static MenuStrip Create(MainMenuActions actions)
     {
         ToolStripMenuItem windowsMenu = Menu("&Windows",
             Item("Cascade"),
@@ -29,7 +29,7 @@ internal static class MainMenu
             CreateFileMenu(),
             CreateSearchMenu(),
             CreateViewMenu(),
-            CreateOptionsMenu(),
+            CreateOptionsMenu(actions),
             CreateToolsMenu(),
             windowsMenu,
             helpMenu,
@@ -81,8 +81,8 @@ internal static class MainMenu
         Item("Previous File"),
         Item("Next file"));
 
-    private static ToolStripMenuItem CreateOptionsMenu() => Menu("&Options",
-        Item("Preferences"),
+    private static ToolStripMenuItem CreateOptionsMenu(MainMenuActions actions) => Menu("&Options",
+        Item("Settings", onClick: actions.OpenSettings),
         Item("Search string lists"),
         Item("Search files spec. list"),
         Item("Search folder list"),
@@ -104,12 +104,23 @@ internal static class MainMenu
         return menu;
     }
 
-    /// <summary>Menu item without a function yet.</summary>
-    private static ToolStripMenuItem Item(string text, Keys shortcut = Keys.None) =>
-        new(MenuText.Display(text, isImplemented: false)) { ShortcutKeys = shortcut };
+    /// <summary>Menu item; without <paramref name="onClick"/> it gets the "*" (no function yet).</summary>
+    private static ToolStripMenuItem Item(string text, Keys shortcut = Keys.None, Action? onClick = null)
+    {
+        ToolStripMenuItem item = new(MenuText.Display(text, isImplemented: onClick is not null)) { ShortcutKeys = shortcut };
+        if (onClick is not null)
+        {
+            item.Click += (_, _) => onClick();
+        }
+        return item;
+    }
 
     /// <summary>Disabled placeholder so an empty "last used" list still shows its submenu arrow.</summary>
     private static ToolStripMenuItem EmptyListItem() => new("(empty)") { Enabled = false };
 
     private static ToolStripSeparator Separator() => new();
 }
+
+/// <summary>Handlers for implemented menu items.</summary>
+/// <param name="OpenSettings">Options → Settings.</param>
+internal sealed record MainMenuActions(Action OpenSettings);

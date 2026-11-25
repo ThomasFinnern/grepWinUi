@@ -148,7 +148,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–8 are done.
+One step = one session. Steps 1–9 are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -160,8 +160,10 @@ One step = one session. Steps 1–8 are done.
 1. [x] `lib_SaveAndLoad` library for reading/writing class objects (classes only define their content items)
 1. [x] Config: settings model using `lib_SaveAndLoad`, JSON in `%AppData%\GrepWinUi\`, standard data file
        in `Defaults`, read when no user file exists
-1. [ ] Create code for first config menu item now named settings instead
+1. [x] Create code for first config menu item now named settings instead
 1. [ ] Recent-first list: newest on top, duplicates move to top, size limit, saved to disk (tested)
+1. [ ] Options menu: "Search string lists", "Search files spec. list", "Search folder list"
+       (edit the recent-first lists)
 1. [ ] Search query model: search string, file types, folders, all options; list of past queries
 1. [ ] Search properties form: all inputs from `searchForm.png`, dropdowns filled from the lists; no search
 1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
@@ -180,6 +182,7 @@ One step = one session. Steps 1–8 are done.
 1. [ ] Options dialog: config editor, CSS colors
 1. [ ] `lib_CommandLine` library for command line parsing (program only defines its items)
 1. [ ] Command line
+1. [ ] Options menu: "Command line search parameters"
 
 
 Ideas for later (not planned): ZIP search, printing, Explorer right-click entry,
@@ -187,4 +190,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 9: Create code for config menu items one by one.
+Step 10: Recent-first list.
