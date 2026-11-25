@@ -9,10 +9,10 @@ internal static class MainMenu
     public static MenuStrip Create(MainMenuActions actions)
     {
         ToolStripMenuItem windowsMenu = Menu("&Windows",
-            Item("Cascade"),
-            Item("Tile horizontal"),
-            Item("Tile vertical"),
-            Item("Arrange Icons"));
+            Item("Cascade", onClick: () => actions.ArrangeWindows(MdiLayout.Cascade)),
+            Item("Tile horizontal", onClick: () => actions.ArrangeWindows(MdiLayout.TileHorizontal)),
+            Item("Tile vertical", onClick: () => actions.ArrangeWindows(MdiLayout.TileVertical)),
+            Item("Arrange Icons", onClick: () => actions.ArrangeWindows(MdiLayout.ArrangeIcons)));
 
         ToolStripMenuItem helpMenu = Menu("&Help",
             Item("Contents"),
@@ -39,7 +39,7 @@ internal static class MainMenu
     }
 
     private static ToolStripMenuItem CreateFileMenu(MainMenuActions actions) => Menu("&File",
-        Item("New search query", Keys.Control | Keys.N),
+        Item("New search query", Keys.Control | Keys.N, actions.NewSearch),
         Item("Open search query", Keys.Control | Keys.O),
         Item("Save search query", Keys.Alt | Keys.S),
         Item("Close search view"),
@@ -124,4 +124,6 @@ internal static class MainMenu
 /// <summary>Handlers for implemented menu items.</summary>
 /// <param name="OpenSettings">Options → Settings.</param>
 /// <param name="ExitApp">File → Exit.</param>
-internal sealed record MainMenuActions(Action OpenSettings, Action ExitApp);
+/// <param name="NewSearch">File → New search query: opens a new result form.</param>
+/// <param name="ArrangeWindows">Windows → Cascade / Tile / Arrange Icons.</param>
+internal sealed record MainMenuActions(Action OpenSettings, Action ExitApp, Action NewSearch, Action<MdiLayout> ArrangeWindows);

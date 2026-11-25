@@ -14,6 +14,11 @@ redesign from start with the help of AI
 - **Status bar:** Title, Info, Working (progress bar), Folder, Files, Time. Shows dummy texts for now.
 - **Settings:** stored per user in `%AppData%\GrepWinUi\Config.json` (no admin rights needed).
   Until you change a setting, the standard values from `Defaults\Config.json` next to the exe are used.
+- **File → New search query (Ctrl+N):** opens a new search result window inside the main window.
+  For now it shows dummy content: a header line with view options (copied from the settings) and
+  two panes, the file list on top and the matching lines below (drag the splitter between them).
+  Needs the Microsoft Edge WebView2 Runtime (built into Windows 11).
+- **Windows → Cascade / Tile horizontal / Tile vertical / Arrange Icons:** arranges the result windows.
 - **File → Exit:** closes the program.
 - **Options → Settings:** edit the settings on three pages (Search result view, While searching,
   On start of program). **Save** writes `Config.json`, **Cancel** discards all changes.

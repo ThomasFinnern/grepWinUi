@@ -1,14 +1,18 @@
 using GrepWinUi.App.Options;
+using GrepWinUi.App.Results;
 using GrepWinUi.Core;
 using GrepWinUi.Core.AppData.Config;
+using Microsoft.Web.WebView2.Core;
 using SaveAndLoad;
 
 namespace GrepWinUi.App;
 
-/// <summary>Main application window. Will become the MDI container for search forms.</summary>
+/// <summary>Main application window: MDI container for the search result forms.</summary>
 public sealed class MainForm : Form
 {
     private readonly ObjectStore _store;
+    private Task<CoreWebView2Environment>? _webViewEnvironment;
+    private int _resultFormCount;
 
     /// <summary>Creates the main window with its menu bar and status bar.</summary>
     /// <param name="config">Loaded user settings.</param>
@@ -25,7 +29,7 @@ public sealed class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         IsMdiContainer = true;
 
-        MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(OpenSettings, ExitApp));
+        MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(OpenSettings, ExitApp, NewSearch, LayoutMdi));
         MainMenuStrip = menuStrip;
         Controls.Add(menuStrip);
         Controls.Add(new MainStatusBar());
@@ -33,6 +37,30 @@ public sealed class MainForm : Form
 
     /// <summary>User settings; new result forms start with a copy of <see cref="AppConfig.ResultView"/>.</summary>
     internal AppConfig Config { get; private set; }
+
+    /// <summary>File → New search query: opens a new result form with a copy of the view settings.</summary>
+    private void NewSearch()
+    {
+        _resultFormCount++;
+        ResultForm form = new(Config.ResultView with { }, WebViewEnvironment(), _resultFormCount)
+        {
+            MdiParent = this,
+            Icon = Icon,
+        };
+        form.Show();
+    }
+
+    /// <summary>
+    /// Shared WebView2 environment, created on first use. Its cache lives in
+    /// %LocalAppData%\GrepWinUi\WebView2 (default would be next to the exe: needs admin rights).
+    /// </summary>
+    private Task<CoreWebView2Environment> WebViewEnvironment() =>
+        _webViewEnvironment ??= CoreWebView2Environment.CreateAsync(
+            browserExecutableFolder: null,
+            userDataFolder: Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                AppInfo.ProductName,
+                "WebView2"));
 
     /// <summary>File → Exit: closes the main window and ends the program.</summary>
     private void ExitApp() => Close();

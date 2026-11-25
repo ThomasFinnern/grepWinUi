@@ -31,6 +31,9 @@ This project will reimplement the functions in former project netGrepWin from sc
 - There is no WinForms designer in VS Code, so build forms in code
   (`Dock`, `TableLayoutPanel`, …) and don't use `*.Designer.cs` files.
 - Use **WebView2** for the HTML/CSS result panes. The old project's `WebBrowser` control is based on IE and outdated.
+  Its user data/cache folder is `%LocalAppData%\GrepWinUi\WebView2` (default next to the exe would need admin rights);
+  one shared `CoreWebView2Environment` in `MainForm`. The App `.csproj` removes the package's unused WPF reference
+  (it caused warning MSB3277).
 - Run searches with `async/await` so the UI never freezes (a known problem of the old program).
 - Store config in the user profile (`%AppData%`), never in the program folder, so no admin rights are needed.
 - The new project does not reference the old project's code (.NET Framework 2.0 / 3.5 / 4.5);
@@ -154,7 +157,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–10 are done.
+One step = one session. Steps 1–11 are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -168,13 +171,16 @@ One step = one session. Steps 1–10 are done.
        in `Defaults`, read when no user file exists
 1. [x] Create code for first config menu item now named settings instead
 1. [x] Recent-first list (`lib_RecentList`): newest on top, duplicates move to top, size limit, saved to disk (tested)
+1. [x] Search result child form (MDI child): layout of header line with view options and the two
+       result panes (file list, matching lines) with dummy content; File → New opens one; no search yet
+1. [ ] Result form: header line with view options, two WebView2 panes; HTML/CSS built in Core: basics
 1. [ ] Options menu: "Search string lists", "Search files spec. list", "Search folder list"
        (edit the recent-first lists)
 1. [ ] Search query model: search string, file types, folders, all options; list of past queries
 1. [ ] Search properties form: all inputs from `searchForm.png`, dropdowns filled from the lists; no search
 1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
        (regex, whole word, match case, lines before/after); async, cancellable, progress
-1. [ ] Result form: header line with view options, two WebView2 panes; HTML/CSS built in Core
+1. [ ] Result form: two WebView2 panes; HTML/CSS built in Core: fill with search data, style like in old project with classes
 1. [ ] Connect search to results: start/cancel
 1. [ ] Status bar Title and Info: short and long text about the current task / result
 1. [ ] Status bar Working: % of files done (config option, needs the file count before searching),
@@ -196,4 +202,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 11: Options menu "Search string lists", "Search files spec. list", "Search folder list".
+Step 12: Options menu "Search string lists", "Search files spec. list", "Search folder list".
