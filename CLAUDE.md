@@ -46,8 +46,10 @@ src/GrepWinUi.Core/          class library (net10.0, no UI): search, query model
                              recent-first lists, config, result files, HTML building
 src/GrepWinUi.App/           WinForms (net10.0-windows): MDI window, forms, WebView2
 src/lib_SaveAndLoad/         library (net10.0, namespace SaveAndLoad): save/load objects as JSON
+src/lib_RecentList/          library (net10.0, namespace RecentLists): RecentList<TItem>, uses lib_SaveAndLoad
 tests/GrepWinUi.Core.Tests/  xUnit tests for Core
 tests/lib_SaveAndLoad.Tests/ xUnit tests for lib_SaveAndLoad (temp folders only)
+tests/lib_RecentList.Tests/  xUnit tests for lib_RecentList
 ```
 - All logic lives in Core so it can be tested; App only wires up forms.
 - Tests: **xUnit**.
@@ -66,6 +68,10 @@ tests/lib_SaveAndLoad.Tests/ xUnit tests for lib_SaveAndLoad (temp folders only)
     `ObjectStore(StorageFolders)` does `Load<T>()` (user file → defaults file → `new T()`, never
     throws, problem text in `LoadResult`) and `Save<T>()` (temp file then replace; throws `IOException`).
     No UI in the library: the App decides what to show. No ties to the old LibConfig.
+  - **`lib_RecentList`:** `RecentList<TItem> : StoredList<TItem>`. `Add` puts an item on top; an equal item
+    (comparer from the constructor) moves to the top; oldest items beyond `MaxCount` drop out.
+    `MaxCount` default 15, set in the derived constructor, changeable at runtime (shrinking trims),
+    not stored in the file. Derived classes add `IStorable` + `FileName`.
   - **`lib_CommandLine`:** same approach. A `lib_` library does the parsing; the program only
     defines its command line items.
 - Program-specific definition classes (only content items, no UI) live in Core under `AppData/`:
@@ -148,7 +154,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–9 are done.
+One step = one session. Steps 1–10 are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -161,7 +167,7 @@ One step = one session. Steps 1–9 are done.
 1. [x] Config: settings model using `lib_SaveAndLoad`, JSON in `%AppData%\GrepWinUi\`, standard data file
        in `Defaults`, read when no user file exists
 1. [x] Create code for first config menu item now named settings instead
-1. [ ] Recent-first list: newest on top, duplicates move to top, size limit, saved to disk (tested)
+1. [x] Recent-first list (`lib_RecentList`): newest on top, duplicates move to top, size limit, saved to disk (tested)
 1. [ ] Options menu: "Search string lists", "Search files spec. list", "Search folder list"
        (edit the recent-first lists)
 1. [ ] Search query model: search string, file types, folders, all options; list of past queries
@@ -190,4 +196,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 10: Recent-first list.
+Step 11: Options menu "Search string lists", "Search files spec. list", "Search folder list".

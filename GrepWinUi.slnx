@@ -2,10 +2,12 @@
   <Folder Name="/src/">
     <Project Path="src/GrepWinUi.App/GrepWinUi.App.csproj" />
     <Project Path="src/GrepWinUi.Core/GrepWinUi.Core.csproj" />
+    <Project Path="src/lib_RecentList/lib_RecentList.csproj" />
     <Project Path="src/lib_SaveAndLoad/lib_SaveAndLoad.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GrepWinUi.Core.Tests/GrepWinUi.Core.Tests.csproj" />
+    <Project Path="tests/lib_RecentList.Tests/lib_RecentList.Tests.csproj" />
     <Project Path="tests/lib_SaveAndLoad.Tests/lib_SaveAndLoad.Tests.csproj" />
   </Folder>
 </Solution>
