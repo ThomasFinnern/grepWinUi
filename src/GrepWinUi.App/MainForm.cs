@@ -1,5 +1,6 @@
 using GrepWinUi.App.Options;
 using GrepWinUi.App.Results;
+using GrepWinUi.App.Search;
 using GrepWinUi.Core;
 using GrepWinUi.Core.AppData.Config;
 using Microsoft.Web.WebView2.Core;
@@ -29,16 +30,30 @@ public sealed class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         IsMdiContainer = true;
 
-        MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(OpenSettings, ExitApp, NewSearch, LayoutMdi));
+        MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(OpenSettings, ExitApp, NewSearch, EditSearch, LayoutMdi));
         MainMenuStrip = menuStrip;
         Controls.Add(menuStrip);
         Controls.Add(new MainStatusBar());
+
+        Shown += (_, _) => OnFirstShown();
+    }
+
+    /// <summary>Program start: without an open result form, a new empty one with its search properties dialog.</summary>
+    private void OnFirstShown()
+    {
+        if (MdiChildren.Length == 0)
+        {
+            NewSearch();
+        }
     }
 
     /// <summary>User settings; new result forms start with a copy of <see cref="AppConfig.ResultView"/>.</summary>
     internal AppConfig Config { get; private set; }
 
-    /// <summary>File → New search query: opens a new result form with a copy of the view settings.</summary>
+    /// <summary>
+    /// File → New search query: opens a new result form with a copy of the view settings,
+    /// then its search properties dialog.
+    /// </summary>
     private void NewSearch()
     {
         _resultFormCount++;
@@ -48,6 +63,27 @@ public sealed class MainForm : Form
             Icon = Icon,
         };
         form.Show();
+        ShowSearchProperties(form);
+    }
+
+    /// <summary>Search → Search: search properties of the active result form; without one a new result form.</summary>
+    private void EditSearch()
+    {
+        if (ActiveMdiChild is ResultForm form)
+        {
+            ShowSearchProperties(form);
+        }
+        else
+        {
+            NewSearch();
+        }
+    }
+
+    /// <summary>Search properties dialog, modal over <paramref name="form"/>. Layout only for now (no data).</summary>
+    private static void ShowSearchProperties(ResultForm form)
+    {
+        using SearchPropertiesForm dialog = new();
+        dialog.ShowDialog(form);
     }
 
     /// <summary>

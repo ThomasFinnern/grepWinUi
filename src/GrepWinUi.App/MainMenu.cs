@@ -27,7 +27,7 @@ internal static class MainMenu
         menuStrip.Items.AddRange(new ToolStripItem[]
         {
             CreateFileMenu(actions),
-            CreateSearchMenu(),
+            CreateSearchMenu(actions),
             CreateViewMenu(),
             CreateOptionsMenu(actions),
             CreateToolsMenu(),
@@ -60,8 +60,8 @@ internal static class MainMenu
         Separator(),
         Item("Exit", onClick: actions.ExitApp));
 
-    private static ToolStripMenuItem CreateSearchMenu() => Menu("&Search",
-        Item("Search", Keys.Control | Keys.F),
+    private static ToolStripMenuItem CreateSearchMenu(MainMenuActions actions) => Menu("&Search",
+        Item("Search", Keys.Control | Keys.F, actions.EditSearch),
         Item("Restart search", Keys.Alt | Keys.R),
         Item("Search in Files"),
         Separator(),
@@ -124,6 +124,7 @@ internal static class MainMenu
 /// <summary>Handlers for implemented menu items.</summary>
 /// <param name="OpenSettings">Options → Settings.</param>
 /// <param name="ExitApp">File → Exit.</param>
-/// <param name="NewSearch">File → New search query: opens a new result form.</param>
+/// <param name="NewSearch">File → New search query: opens a new result form and its search properties.</param>
+/// <param name="EditSearch">Search → Search: search properties of the active result form.</param>
 /// <param name="ArrangeWindows">Windows → Cascade / Tile / Arrange Icons.</param>
-internal sealed record MainMenuActions(Action OpenSettings, Action ExitApp, Action NewSearch, Action<MdiLayout> ArrangeWindows);
+internal sealed record MainMenuActions(Action OpenSettings, Action ExitApp, Action NewSearch, Action EditSearch, Action<MdiLayout> ArrangeWindows);

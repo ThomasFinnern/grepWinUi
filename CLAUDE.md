@@ -110,6 +110,9 @@ Fields from left to right:
   (what it does, where to find it: menu entry, key or command line option) under a "Features" section.
 - Menu items without a working function get a `*` in front of their text (e.g. `*Open...`).
   Remove the `*` in the step that makes the function work.
+- Parameter names in forms (checkboxes, radio buttons, input labels) whose value has no effect yet are
+  struck through with `NoEffect(...)` (`SearchFormControls`). Remove `NoEffect` in the step that makes
+  the parameter work, without being asked.
 
 ## How to work with me
 - I build this in small steps. Do ONE step at a time, then stop.
@@ -157,7 +160,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–12 are done.
+One step = one session. Steps 1–12 and 13a are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -174,13 +177,14 @@ One step = one session. Steps 1–12 are done.
 1. [x] Search result child form (MDI child): layout of header line with view options and the two
        result panes (file list, matching lines) with dummy content; File → New opens one; no search yet
 1. [x] Result form: header line with view options, two WebView2 panes; HTML/CSS built in Core: basics
-1. [ ] Search query model: search string, file types, folders, all options; list of past queries
-1. [ ] Search properties form: all inputs from `searchForm.png`, dropdowns filled from the lists; no search.
-       Opened with Search → Search (Ctrl+F) as a popup (modal dialog) over the active result form;
-       it is filled with that form's current search data and writes the changes back to it.
-       Without an active result form a new one is created first.
-       On program start it opens automatically for the latest created result form data
-       if "Open search form" is set in Settings (On start of program).
+1. [x] 13a Search properties form, layout only: all inputs from `searchForm.png` and the old
+       `frmSearchProperties`; opened with Search → Search (Ctrl+F) as a modal dialog over the active
+       result form (without one, a new result form is created first); File → New and program start
+       without a result form: new empty result form with the dialog open; empty dropdowns, no data, no search
+1. [ ] 13b Search query model: a `SearchQuery` class in Core with exactly the fields of the form;
+       recent-first lists (search strings, file specs, folders, past queries); tests
+1. [ ] 14 Connect form and model: the form is filled with the active result form's search data
+       and writes the changes back to it; dropdowns filled from the lists; no search.
 1. [ ] Options menu: "Search string lists", "Search files spec. list", "Search folder list"
        (edit the recent-first lists)
 1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
@@ -193,7 +197,8 @@ One step = one session. Steps 1–12 are done.
 1. [ ] Status bar Folder (last folder name), Files (read / all) and Time (counting while a search runs)
 1. [ ] Result clicks: click on a file jumps to its lines; double click opens the "show file" form
 1. [ ] Save/open search results and the recent result files list (File menu)
-1. [ ] Reopen the last forms on start
+1. [ ] Reopen the last forms on start; the dialog then opens for the last active result form
+       if "Open search form" is set in Settings (On start of program)
 1. [ ] Replace
 1. [ ] Search in found files, "search again" key
 1. [ ] Options dialog: config editor, CSS colors
@@ -207,4 +212,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 13: Search query model (data behind the search form).
+Step 13b: Search query model (`SearchQuery` in Core with the fields of the search form, recent-first lists).
