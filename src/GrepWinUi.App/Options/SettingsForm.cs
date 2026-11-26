@@ -5,7 +5,13 @@ namespace GrepWinUi.App.Options;
 /// <summary>Dialog to edit the user settings. Works on a copy; <see cref="Result"/> is set on Save.</summary>
 internal sealed class SettingsForm : Form
 {
-    private readonly OptionsPage[] _pages = [new ResultViewPage(), new WhileSearchingPage(), new OnStartPage()];
+    private readonly OptionsPage[] _pages =
+    [
+        new ResultViewPage(),
+        new WhileSearchingPage(),
+        new OnStartPage(),
+        new TokenListPage("Search string token", config => config.SearchStringTokens),
+    ];
     private readonly ListBox _pageList = new() { Dock = DockStyle.Left, Width = 180, IntegralHeight = false };
     private readonly Label _pageTitle = new() { Dock = DockStyle.Top, Height = 28, Font = new Font(SystemFonts.MessageBoxFont!, FontStyle.Bold) };
     private readonly Panel _pageHost = new() { Dock = DockStyle.Fill };

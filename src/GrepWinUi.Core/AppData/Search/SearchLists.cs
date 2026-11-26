@@ -57,6 +57,18 @@ public sealed class SearchLists
         }
     }
 
+    /// <summary>Applies the list limits of the settings (at start and after the settings changed).</summary>
+    public void ApplySettings(AppConfig config)
+    {
+        TokenListOptions tokens = config.SearchStringTokens;
+        SearchStrings.MaxCount = Math.Max(1, tokens.MaxCount);
+        SearchStrings.MaxFixedCount = Math.Max(0, tokens.MaxFixedCount);
+    }
+
+    /// <summary>Dropdown items of the search string: used and fixed tokens merged as set in the settings.</summary>
+    public IReadOnlyList<string> SearchStringTokens(AppConfig config) =>
+        SearchStrings.Merged(config.SearchStringTokens.PreFixedCount, config.SearchStringTokens.FirstFixedCount);
+
     /// <summary>Query for a new result form: a copy of the newest past query, else the defaults.</summary>
     public SearchQuery StartQuery(AppConfig config) =>
         Queries.Items.Count > 0 ? Queries.Items[0].Copy() : SearchQuery.CreateDefault(config);

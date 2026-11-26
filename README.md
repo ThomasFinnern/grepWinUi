@@ -52,9 +52,17 @@ redesign from start with the help of AI
   Parameter names that have no effect yet are struck through.
 - **Windows → Cascade / Tile horizontal / Tile vertical / Arrange Icons:** arranges the result windows.
 - **File → Exit:** closes the program.
-- **Options → Settings:** edit the settings on three pages (Search result view, While searching,
-  On start of program). **Save** writes `Config.json`, **Cancel** discards all changes.
+- **Options → Settings:** edit the settings on four pages (Search result view, While searching,
+  On start of program, Search string token). **Save** writes `Config.json`, **Cancel** discards all changes.
   New result forms start with a copy of these settings.
+  The page **Search string token** sets the search string dropdown: how many newest used entries come
+  first, how many fixed entries follow, and how many used / fixed entries are kept.
+- **Options → Search string token:** edit the list of search strings of the dropdown. Ticked entries
+  are **fixed**: they are kept and don't move when a search string is used (used entries move to the
+  top and the oldest drop out). The list is always shown in dropdown order: the newest used entries
+  first, then the fixed ones, then the rest. **Add** a new entry, **Move up** / **Move down** (within
+  used or fixed entries), **Delete selected**. Bottom right: the four list settings, the same values
+  as on the Settings page. **Exit** saves list and settings, **Cancel** discards.
 
 ## Build and run
 

@@ -154,9 +154,10 @@ public sealed class SearchQueryTests : IDisposable
     }
 
     [Fact]
-    public void Lists_HaveMaxCountsOfOldProgram()
+    public void Lists_HaveStartMaxCounts()
     {
-        Assert.Equal(35, new SearchStringList().MaxCount);
+        Assert.Equal(30, new SearchStringList().MaxCount);
+        Assert.Equal(15, new SearchStringList().MaxFixedCount);
         Assert.Equal(35, new FileNamesList().MaxCount);
         Assert.Equal(40, new FolderNameList().MaxCount);
         Assert.Equal(15, new SearchQueryList().MaxCount);

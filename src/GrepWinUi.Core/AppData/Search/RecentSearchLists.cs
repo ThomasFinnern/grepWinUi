@@ -3,14 +3,17 @@ using SaveAndLoad;
 
 namespace GrepWinUi.Core.AppData.Search;
 
-/// <summary>Last used search strings (dropdown of the search string). Case matters.</summary>
-public sealed class SearchStringList : RecentList<string>, IStorable
+/// <summary>
+/// Search string tokens: last used search strings plus fixed ones (dropdown of the search string).
+/// Case matters. Limits come from <see cref="Config.AppConfig.SearchStringTokens"/>.
+/// </summary>
+public sealed class SearchStringList : PinnedRecentList<string>, IStorable
 {
     /// <inheritdoc/>
     public static string FileName => "SearchStrings.json";
 
-    /// <summary>Empty list, up to 35 items.</summary>
-    public SearchStringList() : base(maxCount: 35, comparer: StringComparer.Ordinal) { }
+    /// <summary>Empty list, up to 30 used and 15 fixed items until the settings are applied.</summary>
+    public SearchStringList() : base(maxCount: 30, maxFixedCount: 15, comparer: StringComparer.Ordinal) { }
 }
 
 /// <summary>Last used file name patterns (dropdown of the file names). Case is ignored, as in Windows.</summary>

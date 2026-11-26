@@ -34,6 +34,26 @@ public sealed class AppConfigTests : IDisposable
     }
 
     [Fact]
+    public void NewConfig_SearchStringTokens_StartValues()
+    {
+        TokenListOptions tokens = new AppConfig().SearchStringTokens;
+
+        Assert.Equal(7, tokens.PreFixedCount);
+        Assert.Equal(3, tokens.FirstFixedCount);
+        Assert.Equal(30, tokens.MaxCount);
+        Assert.Equal(15, tokens.MaxFixedCount);
+    }
+
+    [Fact]
+    public void OldConfigFileWithoutTokenSection_GetsDefaults()
+    {
+        AppConfig config = JsonSerializer.Deserialize<AppConfig>("{ \"ShowProgressInPercent\": true }")!;
+
+        Assert.True(config.ShowProgressInPercent);
+        Assert.Equal(new TokenListOptions(), config.SearchStringTokens);
+    }
+
+    [Fact]
     public void DefaultsFile_IsReadAndMatchesBuiltInDefaults()
     {
         StorageFolders folders = new(

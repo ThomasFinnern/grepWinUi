@@ -17,5 +17,11 @@
     "ShowFileContents": true,
     "ShowWholeLine": true,
     "ShowDoubleBlanks": false
+  },
+  "SearchStringTokens": {
+    "PreFixedCount": 7,
+    "FirstFixedCount": 3,
+    "MaxCount": 30,
+    "MaxFixedCount": 15
   }
 }

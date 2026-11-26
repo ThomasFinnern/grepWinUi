@@ -23,6 +23,7 @@ internal static class Program
         }
 
         SearchLists lists = SearchLists.Load(store, out IReadOnlyList<string> listProblems);
+        lists.ApplySettings(config.Value);
         if (listProblems.Count > 0)
         {
             MessageBox.Show(string.Join("\n\n", listProblems), AppInfo.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);

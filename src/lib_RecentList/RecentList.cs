@@ -25,6 +25,9 @@ public abstract class RecentList<TItem> : StoredList<TItem>
         _comparer = comparer ?? EqualityComparer<TItem>.Default;
     }
 
+    /// <summary>Decides if two items are the same.</summary>
+    protected IEqualityComparer<TItem> Comparer => _comparer;
+
     /// <summary>
     /// Number of kept items (at least 1). Can be changed at runtime, e.g. from settings;
     /// a smaller value removes the oldest items at once. Not stored in the file.

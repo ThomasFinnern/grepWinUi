@@ -95,6 +95,48 @@ public sealed class SearchFormLogicTests : IDisposable
     }
 
     [Fact]
+    public void ApplySettings_SetsSearchStringLimits()
+    {
+        SearchLists lists = new();
+        lists.SearchStrings.Fixed.AddRange(["f1", "f2", "f3"]);
+        AppConfig config = new();
+        config.SearchStringTokens.MaxCount = 2;
+        config.SearchStringTokens.MaxFixedCount = 1;
+
+        lists.ApplySettings(config);
+        lists.Remember(new SearchQuery { SearchString = "a" }, asPastQuery: false);
+        lists.Remember(new SearchQuery { SearchString = "b" }, asPastQuery: false);
+        lists.Remember(new SearchQuery { SearchString = "c" }, asPastQuery: false);
+
+        Assert.Equal(["c", "b"], lists.SearchStrings.Items);
+        Assert.Equal(["f1"], lists.SearchStrings.Fixed);
+    }
+
+    [Fact]
+    public void Remember_FixedSearchStringStaysInPlace()
+    {
+        SearchLists lists = new();
+        lists.SearchStrings.Fixed.AddRange(["f1", "f2"]);
+
+        lists.Remember(new SearchQuery { SearchString = "f2" }, asPastQuery: false);
+
+        Assert.Equal(["f1", "f2"], lists.SearchStrings.Fixed);
+    }
+
+    [Fact]
+    public void SearchStringTokens_MergedAsInSettings()
+    {
+        SearchLists lists = new();
+        lists.SearchStrings.Items.AddRange(["u1", "u2", "u3"]);
+        lists.SearchStrings.Fixed.AddRange(["f1", "f2"]);
+        AppConfig config = new();
+        config.SearchStringTokens.PreFixedCount = 1;
+        config.SearchStringTokens.FirstFixedCount = 1;
+
+        Assert.Equal(["u1", "f1", "u2", "u3", "f2"], lists.SearchStringTokens(config));
+    }
+
+    [Fact]
     public void Title_SearchStringFileNamesFolder()
     {
         SearchQuery query = new() { SearchString = "function", FileNames = "*controller.php", FolderName = @"e:\www\api" };

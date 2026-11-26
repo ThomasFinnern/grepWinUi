@@ -86,7 +86,7 @@ tests/lib_RecentList.Tests/  xUnit tests for lib_RecentList
   - `AppData/Search/`: `SearchQuery` (all inputs of the search form, no line counts; `Copy()`,
     `CreateDefault(config)`), `SearchQueryComparer` (same search = same search string,
     file names and folder name; options not compared, so newer options replace older ones) and the recent-first lists
-    `SearchStringList`, `FileNamesList`, `FolderNameList` (35/35/40, file and folder names ignore case)
+    `SearchStringList`, `FileNamesList`, `FolderNameList` (30/35/40, file and folder names ignore case)
     and `SearchQueryList` (past queries).
   - `AppData/CommandLine/`: command line item definitions.
 - A new result form starts with a **copy** of the current config settings
@@ -167,7 +167,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–15 (with 13a, 13b) are done.
+One step = one session. Steps 1–16 (with 13a, 13b) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -206,8 +206,17 @@ One step = one session. Steps 1–15 (with 13a, 13b) are done.
        the search results will use the same folder.
        Also: Tab order in the search form (search string → file names → folder name first);
        menu shortcuts (Ctrl+F, …) work inside the WebView2 panes.
-1. [ ] Options menu: "Search string lists", "Search files spec. list", "Search folder list"
-       (edit the recent-first lists)
+1. [x] 16 Options menu "Search string token" (was "Search string lists"): token list as in the old
+       program = used items (newest first) + fixed items (never moved by a new / known entry);
+       dropdown order from 4 parameters (pre fixed count, first fixed count, max count, max fixed count;
+       start values 7 / 3 / 30 / 15) in a separate Settings page "Search string token"; edit dialog
+       (ticked = fixed, always in dropdown order, Add, Delete, Move up/down, the 4 parameters bottom
+       right shared with Settings, Exit, Cancel). Generic parts: `PinnedRecentList`, `TokenListPage`,
+       `TokenListForm`.
+1. [ ] 16b Options menu "File name token" (was "Search files spec. list"): same as 16 for the file
+       names list, own Settings page
+1. [ ] 16c Options menu "Folder name token" (was "Search folder list"): same as 16 for the folder
+       names list, own Settings page
 1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
        (regex, whole word, match case, lines before/after); async, cancellable, progress
 1. [ ] Result form: two WebView2 panes; HTML/CSS built in Core: fill with search data, style like in old project with classes
@@ -233,5 +242,5 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 16: Options menu "Search string lists", "Search files spec. list", "Search folder list"
-(edit the recent-first lists).
+Step 16b: Options menu "File name token" (was "Search files spec. list"): same as step 16 for the
+file names list (reuse `PinnedRecentList`, `TokenListPage`, `TokenListForm`), own Settings page.

@@ -30,6 +30,17 @@ Notes from `..\netGrepWin\NetGrepWin\clsSearchProperties.cs`, `clsGrepTokenListB
 - Max counts: search strings 35, file specifications 35, folders 40, backup folders 20 (base default 25).
 - Files: `SearchStringList.txt`, …; past queries: `LastUsedSearchQueries.txt`
   (`clsObjectListFixedLength<clsSearchProperties>`).
+- Four parameters, stored in the list file (defaults in `clsGrepTokenListBase`):
+  `PreFixedTokenNumber` 7, `FirstFixedTokenNumber` 10, `MaxTokenNumber` 25, `MaxFixedNumber` 15.
+- `MergedTokenList()` (dropdown order): the first *PreFixed* used tokens, then up to *FirstFixed*
+  fixed tokens, then the other used tokens, then the other fixed tokens; each token only once.
+  (Its last loop has a bug: it fills from the used list instead of the fixed list.)
+- `AddUsedToken` only changes the used list; fixed tokens never move.
+- Options dialog `frmOptSearchStringToken` ("Option search string token"): `CheckedListBox` of the
+  merged list, ticked = fixed ("checked for fixed items to keep"); text box + **Add** (inserts on top);
+  **Delete Selected** (empty, not coded); the four numbers; **Assign** (save, stay), **Exit**
+  (save, close), **Cancel**, **Clear** (reload). Same dialogs for file specifications and folders
+  (`frmOptFileSpecificationToken`, `frmOptFolderToken`).
 
 ## Save / open a query file (`frmNetGrepWinProgram`)
 

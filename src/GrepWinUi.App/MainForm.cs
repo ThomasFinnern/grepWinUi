@@ -40,7 +40,8 @@ public sealed class MainForm : Form
         IsMdiContainer = true;
 
         MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(
-            OpenSettings, ExitApp, NewSearch, EditSearch, OpenSearchQuery, LoadSearchQuery, SaveSearchQuery, LayoutMdi));
+            OpenSettings, ExitApp, NewSearch, EditSearch, OpenSearchQuery, LoadSearchQuery, SaveSearchQuery,
+            EditSearchStringTokens, LayoutMdi));
         MainMenuStrip = menuStrip;
         Controls.Add(menuStrip);
         Controls.Add(new MainStatusBar());
@@ -228,7 +229,7 @@ public sealed class MainForm : Form
     /// </summary>
     private void ShowSearchProperties(ResultForm form)
     {
-        using SearchPropertiesForm dialog = new(form.Query, form.ViewOptions, _lists);
+        using SearchPropertiesForm dialog = new(form.Query, form.ViewOptions, _lists, Config);
         if (dialog.ShowDialog(form) != DialogResult.OK)
         {
             return;
@@ -262,6 +263,48 @@ public sealed class MainForm : Form
     private void ExitApp() => Close();
 
     /// <summary>Options → Settings: edit and save the settings.</summary>
+    /// <summary>
+    /// Options → Search string token: edit the search string list (fixed entries ticked) and its four
+    /// list settings. Exit stores the settings in <c>Config.json</c> (same values as in Settings),
+    /// replaces the list and saves the lists; Cancel changes nothing.
+    /// </summary>
+    private void EditSearchStringTokens()
+    {
+        TokenListOptions options = Config.SearchStringTokens;
+        using TokenListForm dialog = new(
+            "Search string token",
+            _lists.SearchStrings.EditRows(options.PreFixedCount, options.FirstFixedCount),
+            StringComparer.Ordinal,
+            options);
+        if (dialog.ShowDialog(this) != DialogResult.OK || dialog.Rows is null || dialog.Options is null)
+        {
+            return;
+        }
+
+        AppConfig changed = Config.Copy();
+        changed.SearchStringTokens = dialog.Options;
+        try
+        {
+            _store.Save(changed);
+            Config = changed;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            MessageBox.Show(this, ex.Message, "Settings not saved", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        _lists.ApplySettings(Config);
+        _lists.SearchStrings.ReplaceAll(dialog.Rows);
+        try
+        {
+            _lists.Save(_store);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            MessageBox.Show(this, ex.Message, "Search lists not saved", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
     private void OpenSettings()
     {
         using SettingsForm dialog = new(Config);
@@ -274,6 +317,7 @@ public sealed class MainForm : Form
         {
             _store.Save(dialog.Result);
             Config = dialog.Result;
+            _lists.ApplySettings(Config);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
