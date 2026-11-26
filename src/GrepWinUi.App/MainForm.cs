@@ -19,6 +19,7 @@ public sealed partial class MainForm : Form
     private readonly LastUsedFiles _lastUsed;
     private readonly ToolStripItem _saveQueryItem;
     private readonly ToolStripItem _saveResultItem;
+    private readonly ToolStripItem _cancelSearchItem;
     private Task<CoreWebView2Environment>? _webViewEnvironment;
     private int _resultFormCount;
 
@@ -43,7 +44,7 @@ public sealed partial class MainForm : Form
 
         MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(
             OpenSettings, ExitApp, NewSearch, EditSearch, OpenSearchQuery, LoadSearchQuery, SaveSearchQuery,
-            OpenSearchResult, SaveSearchResult,
+            OpenSearchResult, SaveSearchResult, CancelSearch,
             EditSearchStringTokens, EditFileNameTokens, EditFolderNameTokens, LayoutMdi));
         MainMenuStrip = menuStrip;
         Controls.Add(menuStrip);
@@ -51,6 +52,7 @@ public sealed partial class MainForm : Form
 
         _saveQueryItem = menuStrip.Items.Find(MainMenu.SaveSearchQueryName, searchAllChildren: true).Single();
         _saveResultItem = menuStrip.Items.Find(MainMenu.SaveSearchResultName, searchAllChildren: true).Single();
+        _cancelSearchItem = menuStrip.Items.Find(MainMenu.CancelSearchName, searchAllChildren: true).Single();
         UpdateMenuState();
         MdiChildActivate += (_, _) => UpdateMenuState();
         Shown += (_, _) => OnFirstShown();
@@ -61,6 +63,7 @@ public sealed partial class MainForm : Form
     {
         _saveQueryItem.Enabled = ActiveMdiChild is ResultForm;
         _saveResultItem.Enabled = ActiveMdiChild is ResultForm { Result: not null };
+        _cancelSearchItem.Enabled = ActiveMdiChild is ResultForm { IsSearching: true };
     }
 
     /// <summary>Program start: without an open result form, a new empty one with its search properties dialog.</summary>
@@ -88,7 +91,7 @@ public sealed partial class MainForm : Form
     private ResultForm CreateResultForm(SearchQuery query)
     {
         _resultFormCount++;
-        ResultForm form = new(query, Config.ResultView with { }, WebViewEnvironment(), _resultFormCount)
+        ResultForm form = new(query, Config.ResultView with { }, WebViewEnvironment(), _resultFormCount, _store.Folders)
         {
             MdiParent = this,
             Icon = Icon,
@@ -226,6 +229,9 @@ public sealed partial class MainForm : Form
             // Only the start folder of the next file dialog is lost.
         }
     }
+
+    /// <summary>Search → Cancel Search: stops the running search of the active result form.</summary>
+    private void CancelSearch() => (ActiveMdiChild as ResultForm)?.CancelSearch();
 
     /// <summary>Search → Search: search properties of the active result form; without one a new result form.</summary>
     private void EditSearch()

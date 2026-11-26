@@ -1,0 +1,55 @@
+/* Style sheet of the matching lines pane of grepWinUi.
+   Your own copy: %AppData%\GrepWinUi\MatchingLines.css (used instead of this file). */
+
+body {
+    font-family: Verdana, sans-serif;
+    font-size: 9pt;
+    color: #000000;
+    margin: 4px;
+}
+
+/* Header line of the pane */
+.HeaderFoundToken {
+    display: block;
+    background-color: #4286CE;
+    padding: 2px 4px;
+}
+
+.HeaderFoundToken h1 {
+    font-size: 12pt;
+    color: white;
+    margin: 0;
+}
+
+.NotFound {
+    color: #B00000;
+    font-weight: bold;
+}
+
+/* Full path of a file above its lines */
+.FileNameTitle {
+    display: block;
+    margin-top: 6px;
+    line-height: 25px;
+    border-top: 1px solid blue;
+    font-weight: bold;
+    font-size: 10pt;
+    color: blue;
+}
+
+/* One matching line: line number and text */
+.Line {
+    font-family: Consolas, monospace;
+    white-space: pre;
+}
+
+.LineNumber {
+    color: #00007F;
+    font-weight: bold;
+}
+
+/* A hit of the search string */
+.Token {
+    color: green;
+    font-weight: bold;
+}

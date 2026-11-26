@@ -11,6 +11,9 @@ internal static class MainMenu
     /// <summary>Name of File → Save search result (enabled only while the active result form has a result).</summary>
     public const string SaveSearchResultName = "saveSearchResult";
 
+    /// <summary>Name of Search → Cancel Search (enabled only while the active result form searches).</summary>
+    public const string CancelSearchName = "cancelSearch";
+
     /// <summary>Creates the menu bar. Items without a handler in <paramref name="actions"/> are marked with "*".</summary>
     public static MenuStrip Create(MainMenuActions actions)
     {
@@ -75,7 +78,7 @@ internal static class MainMenu
         Item("Replace"),
         Separator(),
         Item("Select all", Keys.Control | Keys.A),
-        Item("&Cancel Search"));
+        Named(Item("&Cancel Search", onClick: actions.CancelSearch), CancelSearchName));
 
     private static ToolStripMenuItem CreateViewMenu() => Menu("&View",
         Item("All matches"),
@@ -169,6 +172,7 @@ internal static class MainMenu
 /// <param name="SaveSearchQuery">File → Save search query: active form's query to a file.</param>
 /// <param name="OpenSearchResult">File → Open search result: result file in a new result form.</param>
 /// <param name="SaveSearchResult">File → Save search result: active form's result to a file.</param>
+/// <param name="CancelSearch">Search → Cancel Search: stops the active form's running search.</param>
 /// <param name="EditSearchStringTokens">Options → Search string token: edit the search string list.</param>
 /// <param name="EditFileNameTokens">Options → File name token: edit the file names list.</param>
 /// <param name="EditFolderNameTokens">Options → Folder name token: edit the folder names list.</param>
@@ -183,6 +187,7 @@ internal sealed record MainMenuActions(
     Action SaveSearchQuery,
     Action OpenSearchResult,
     Action SaveSearchResult,
+    Action CancelSearch,
     Action EditSearchStringTokens,
     Action EditFileNameTokens,
     Action EditFolderNameTokens,

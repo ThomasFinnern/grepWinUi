@@ -3,12 +3,14 @@ using GrepWinUi.Core.AppData.Search;
 using GrepWinUi.Core.Search;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
+using SaveAndLoad;
 
 namespace GrepWinUi.App.Results;
 
 /// <summary>
 /// Search result window (MDI child): header line with view options, file list pane on top,
-/// matching lines pane below. Shows dummy content until searching works.
+/// matching lines pane below. The pages are built in Core (<see cref="ResultPageHtml"/>) with the
+/// pane style sheets (<see cref="ResultCss"/>), read again for every page so CSS edits show on the next search.
 /// </summary>
 internal sealed class ResultForm : Form
 {
@@ -17,6 +19,7 @@ internal sealed class ResultForm : Form
     private readonly Task<CoreWebView2Environment> _webViewEnvironment;
     private readonly ViewOptionsBar _optionsBar = new();
     private readonly int _number;
+    private readonly StorageFolders _cssFolders;
     private Task<bool> _panesReady = Task.FromResult(false);
     private CancellationTokenSource? _search;
 
@@ -25,8 +28,11 @@ internal sealed class ResultForm : Form
     /// <param name="viewOptions">Own copy of the view options (taken from the config).</param>
     /// <param name="webViewEnvironment">Shared WebView2 environment (user data in the user profile).</param>
     /// <param name="number">Running number, shown in front of the title.</param>
-    public ResultForm(SearchQuery query, ResultViewOptions viewOptions, Task<CoreWebView2Environment> webViewEnvironment, int number)
+    /// <param name="cssFolders">User and defaults folder of the pane style sheets.</param>
+    public ResultForm(SearchQuery query, ResultViewOptions viewOptions, Task<CoreWebView2Environment> webViewEnvironment,
+        int number, StorageFolders cssFolders)
     {
+        _cssFolders = cssFolders;
         Query = query;
         ViewOptions = viewOptions;
         _webViewEnvironment = webViewEnvironment;
@@ -95,7 +101,7 @@ internal sealed class ResultForm : Form
     private static WebView2 Pane() => new() { Dock = DockStyle.Fill, DefaultBackgroundColor = SystemColors.Control };
 
     /// <summary>
-    /// Runs the search of <see cref="Query"/> in the background and shows the result as plain lists.
+    /// Runs the search of <see cref="Query"/> in the background and shows the result in both panes.
     /// A running search of this form is cancelled first. Never throws (problems are shown in the panes).
     /// </summary>
     public async Task RunSearchAsync()
@@ -105,8 +111,8 @@ internal sealed class ResultForm : Form
         _search = search;
         SetResult(null);
         await ShowPagesAsync(
-            ResultListHtml.Hint($"Searching '{Query.SearchString}' in '{Query.FolderName}' …", Background),
-            ResultListHtml.Hint("", Background));
+            HintPage(ResultCss.FileListFileName, $"Searching '{Query.SearchString}' in '{Query.FolderName}' …"),
+            HintPage(ResultCss.MatchingLinesFileName, ""));
 
         string fileList;
         string matchingLines;
@@ -114,14 +120,14 @@ internal sealed class ResultForm : Form
         try
         {
             result = await SearchEngine.RunAsync(Query, progress: null, search.Token);
-            fileList = ResultListHtml.FileList(result, Background);
-            matchingLines = ResultListHtml.MatchingLines(result, Background);
+            fileList = FileListPage(result);
+            matchingLines = MatchingLinesPage(result);
         }
         catch (Exception ex)
         {
             // Unexpected error in the background search: show it instead of losing it.
-            fileList = ResultListHtml.Hint("Search failed: " + ex.Message, Background);
-            matchingLines = ResultListHtml.Hint("", Background);
+            fileList = HintPage(ResultCss.FileListFileName, "Search failed: " + ex.Message);
+            matchingLines = HintPage(ResultCss.MatchingLinesFileName, "");
         }
 
         if (_search == search)
@@ -132,10 +138,22 @@ internal sealed class ResultForm : Form
         }
     }
 
+    /// <summary>True while a search of this form runs.</summary>
+    public bool IsSearching => _search is not null;
+
+    /// <summary>
+    /// Search → Cancel Search: stops the running search of this form; the panes then show what was
+    /// found until then, marked as cancelled. Does nothing when no search runs.
+    /// </summary>
+    public void CancelSearch() => _search?.Cancel();
+
     /// <summary>Last finished (or loaded) search result of this form; null before the first one or while searching.</summary>
     public SearchResult? Result { get; private set; }
 
-    /// <summary>Raised when <see cref="Result"/> changes (e.g. to enable File → Save search result).</summary>
+    /// <summary>
+    /// Raised when <see cref="Result"/> or <see cref="IsSearching"/> changes
+    /// (e.g. to enable File → Save search result and Search → Cancel Search).
+    /// </summary>
     public event EventHandler? ResultChanged;
 
     /// <summary>Shows a saved result (File → Open search result) without searching; a running search is cancelled.</summary>
@@ -144,7 +162,7 @@ internal sealed class ResultForm : Form
         _search?.Cancel();
         _search = null;
         SetResult(result);
-        await ShowPagesAsync(ResultListHtml.FileList(result, Background), ResultListHtml.MatchingLines(result, Background));
+        await ShowPagesAsync(FileListPage(result), MatchingLinesPage(result));
     }
 
     private void SetResult(SearchResult? result)
@@ -170,6 +188,17 @@ internal sealed class ResultForm : Form
         }
     }
 
+    private string FileListPage(SearchResult result) =>
+        ResultPageHtml.FileList(result, Css(ResultCss.FileListFileName), Background);
+
+    private string MatchingLinesPage(SearchResult result) =>
+        ResultPageHtml.MatchingLines(result, Css(ResultCss.MatchingLinesFileName), Background);
+
+    private string HintPage(string cssFileName, string text) => ResultPageHtml.Hint(text, Css(cssFileName), Background);
+
+    /// <summary>CSS text of a pane (user file → defaults file → built-in; a file that can't be read is skipped).</summary>
+    private string Css(string fileName) => ResultCss.Load(_cssFolders, fileName).Text;
+
     /// <summary>Starts both WebView2 panes and shows a hint until the first search.</summary>
     private async Task<bool> InitPanesAsync()
     {
@@ -178,8 +207,8 @@ internal sealed class ResultForm : Form
             CoreWebView2Environment environment = await _webViewEnvironment;
             await _fileListPane.EnsureCoreWebView2Async(environment);
             await _matchingLinesPane.EnsureCoreWebView2Async(environment);
-            _fileListPane.NavigateToString(ResultListHtml.Hint("No search yet: Search → Search (Ctrl+F), then Start search.", Background));
-            _matchingLinesPane.NavigateToString(ResultListHtml.Hint("", Background));
+            _fileListPane.NavigateToString(HintPage(ResultCss.FileListFileName, "No search yet: Search → Search (Ctrl+F), then Start search."));
+            _matchingLinesPane.NavigateToString(HintPage(ResultCss.MatchingLinesFileName, ""));
             return true;
         }
         catch (Exception ex) when (ex is WebView2RuntimeNotFoundException or InvalidOperationException or System.Runtime.InteropServices.COMException)

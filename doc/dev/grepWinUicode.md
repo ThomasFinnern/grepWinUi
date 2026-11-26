@@ -29,6 +29,7 @@ No global "main" object: `Program.cs` creates the `ObjectStore` and loads `AppCo
 |---|---|
 | User data (settings, lists, session) | `%AppData%\GrepWinUi\*.json` (written on first save) |
 | Standard data files | `<exe>\Defaults\*.json` (read only, used when no user file exists) |
+| Result pane style sheets | `%AppData%\GrepWinUi\FileList.css`, `MatchingLines.css` (user copies, optional) → `<exe>\Defaults\*.css` → built-in text in `ResultCss` |
 | WebView2 cache | `%LocalAppData%\GrepWinUi\WebView2` (one shared environment in `MainForm`) |
 
 No admin rights needed: nothing is written next to the exe.
@@ -154,11 +155,27 @@ No admin rights needed: nothing is written next to the exe.
   `Load(path)` (throws `InvalidDataException` for broken files, query files or other JSON),
   `WithExtension(path)` (adds `.result.json`, replaces a plain `.json`). The result records are
   stored as they are (`System.Text.Json` fills the positional records through their constructors).
-- `ResultListHtml` (interim view until the CSS layout of step 18): `FileList(result, background)`
-  (summary line, problems, `<ol>` of files with hit count), `MatchingLines(result, background)` (per
-  file its path, then `line number: text` with hits in `<mark>`), `Hint(text, background)`,
-  `Summary(result)`, `MarkHits(line)`. All text HTML encoded; at most `MaxLines` (5000) lines, because
-  `NavigateToString` takes only about 2 MB. The background colour comes from the App (no WinForms in Core).
+- `ResultCss` (step 18): one style sheet per pane, `FileListFileName` = `FileList.css`,
+  `MatchingLinesFileName` = `MatchingLines.css`. `Load(folders, fileName)` → `CssText(Text, Source, Problem)`:
+  user file → defaults file → built-in (`BuiltIn(fileName)`, constants `FileList` / `MatchingLines`);
+  never throws, a file that can't be read is skipped (problem text). The Defaults files
+  `src/GrepWinUi.App/Defaults/*.css` must equal the built-in texts (test, line endings ignored).
+  The App reads the CSS for every page, so a changed user copy shows with the next search.
+- `ResultPageHtml` (step 18, replaces the interim `ResultListHtml`): pages with the CSS text inside
+  `<style>`, after a rule `body { background: … }` (window colour from the App, no WinForms in Core),
+  so the CSS can override it. CSS class names from the old program:
+  - `FileList(result, css, background)`: `div.HeaderFoundFiles` with h1 "Results for searched string: '…'"
+    and h2 `Summary(result)`; `p.Problem` per problem; table File name / Folder / Matches
+    (classes `FileName`, `Folder`, `Matches` on `th` and `td`; every column is as small as its content and
+    left aligned, also columns added later; the file name
+    is in a `div` with `title` = full name, cut with "…" beyond `max-width: 30em`) or `p.NotFound` "Found no matches for '…'".
+  - `MatchingLines(result, css, background)`: `div.HeaderFoundToken` h1 "Lines with '…'"; per file
+    `div.FileNameTitle` (full path), per line `div.Line` = `span.LineNumber` ("000012: ", `LineNumber(n)`,
+    six digits as in the old program) + text with hits in `span.Token` (`MarkHits(line)`); or `p.NotFound`.
+  - `Hint(text, css, background)`; `Summary(result)` ("In files '…': found n matches in n files from n
+    files searched in folder '…' (0.4 s)", plus " — cancelled").
+  - All text HTML encoded; at most `MaxLines` (5000) lines, because `NavigateToString` takes only about 2 MB.
+  - Size / date columns of the old file list are not there yet (the result model has no size/date).
 
 ### Other
 - `AppInfo`: product name, main window title (`grepWinUi 1.2.3`).
@@ -247,9 +264,14 @@ program, Search string token, File name token, Folder name token. Works on `AppC
 - `Result` (last finished or loaded result, null while searching) and `ResultChanged`;
   `ShowResultAsync(result)` shows a saved result without searching.
 - `RunSearchAsync()`: cancels a running search of this form, shows "Searching …", awaits
-  `SearchEngine.RunAsync(Query, …)` and shows `ResultListHtml.FileList` / `MatchingLines`. Never throws
-  (an unexpected error is shown in the pane); a newer search wins; closing the form cancels the search.
-  Called by `MainForm.ShowSearchProperties` after Start search (fire and forget).
+  `SearchEngine.RunAsync(Query, …)` and shows `ResultPageHtml.FileList` / `MatchingLines` with the CSS
+  from `ResultCss.Load(cssFolders, …)` (`cssFolders` = `ObjectStore.Folders`, passed in by `MainForm`).
+  Never throws (an unexpected error is shown in the pane); a newer search wins; closing the form cancels
+  the search. Called by `MainForm.ShowSearchProperties` after Start search (fire and forget).
+- `IsSearching` / `CancelSearch()` (step 18): Search → Cancel Search stops the running search; the engine
+  returns what it found so far (`Cancelled = true`) and the panes show it, marked "cancelled".
+  `ResultChanged` is raised at search start and end, so `MainForm.UpdateMenuState` enables
+  Search → Cancel Search (`MainMenu.CancelSearchName`) only while the active form searches.
 - **Keys in the WebView2 panes:** the WinForms WebView2 control only raises its own `KeyDown` for
   shortcut keys and doesn't pass them to the window, so the main menu never sees them (Ctrl+F would
   open the browser's find bar). `OnPaneKeyDown` looks the key up with `MainMenu.FindShortcut`
@@ -325,16 +347,13 @@ Taken from `netGrepWin.code.md`; details per step in the roadmap.
   open/save search results (search input + file list + token lines), each save adds to the
   last used files list; Last used search queries (click opens the query in a search form and
   starts the search); Last used search files (click opens the saved result without searching).
-- **Search menu:** Cancel search (stop, keep what was found); Search in Files.
-- **Options menu:** edit the recent lists (search strings, file names, folders); CSS colors.
+- **Search menu:** Search in Files.
+- **Settings:** edit the two CSS files (step 33).
 - **MDI commands and keys** act on the active result form.
 - **Lists** are saved on each change.
 - **Result form:**
-  - Each pane is HTML with its own CSS classes; each starts with a header, then a list,
-    separated by a grey line.
-  - File list: blue header with search string and file names; click on a file shows its lines
-    in the lower pane and marks it as active; double click opens a "show and search inside file" form.
-  - Matching lines: blue header "tokens found inside files"; the header line options decide what
-    is shown (e.g. pre/post lines).
+  - File list: click on a file shows its lines in the lower pane and marks it as active;
+    double click opens a "show and search inside file" form (step 28); Size and Date columns.
+  - Matching lines: the header line options decide what is shown (e.g. pre/post lines, step 22 / 27).
 - **Old drawbacks to avoid:** UI freezes while searching (→ async), results lost after a popup
   question, admin rights for config (→ `%AppData%`).

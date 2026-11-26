@@ -169,7 +169,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–17 (with 13a, 13b, 16b, 16c) are done.
+One step = one session. Steps 1–18 (with 13a, 13b, 16b, 16c) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 2. [x] Install .NET SDK (11.0.100 installed)
 3. [x] Install VS Code "C#" extension
@@ -226,12 +226,13 @@ First iteration: plain search with visible results.
        wildcards (`*.cs *.md`), plain text line search ignoring case; result model (files with their
        matching lines and line numbers); async, cancellable, progress (files done); tests with temp folders.
        Also: "Start search" searches and both panes show the result as plain lists (`ResultListHtml`)
-18. [ ] Result layout basics + cancel: HTML of both panes built in Core from the result
+18. [x] Result layout basics + cancel: HTML of both panes built in Core from the result
        (header, file list, matching lines with highlighted hits, CSS classes like in the old program).
        CSS in outside files, one per pane: `FileList.css`, `MatchingLines.css`; standard files in
        `Defaults\`, user copies in `%AppData%\GrepWinUi\` (user file → defaults file → built-in);
        Core puts the CSS text into the HTML as `<style>`.
-       Search → Cancel Search stops a running search ("Start search" already searches since step 17)
+       Search → Cancel Search stops a running search ("Start search" already searches since step 17).
+       Done: `ResultCss`, `ResultPageHtml` (replaces `ResultListHtml`); file list without Size / Date yet
 
 Second iteration: deepen step by step (each step removes the strike-through of the parameters it makes work).
 19. [ ] Status bar Title, Info, Folder (last folder name), Files (read / all), Time (counting while
@@ -272,5 +273,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 18: result layout basics with CSS files (`FileList.css`, `MatchingLines.css`) + Search → Cancel Search.
-(Done in between: File → Save / Open search result, `*.result.json`.)
+Step 19: status bar Title, Info, Folder, Files, Time; Working as marquee while a search runs.

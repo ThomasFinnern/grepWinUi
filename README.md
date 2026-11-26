@@ -34,10 +34,16 @@ redesign from start with the help of AI
 - **Search (basic version):** **Start search** searches the folder from "Folder name" (with its
   subfolders when "Include subfolders" is ticked) for files matching "File names" (wildcards like
   `*.cs *.md`) and finds the search string as plain text, ignoring upper / lower case. The window
-  stays usable while searching. The results are shown as simple lists: the file list pane shows a
-  summary and the files with their number of hits, the matching lines pane shows each file with its
-  lines (`line number: text`, hits marked). Problems (missing folder, unreadable file) are listed too.
-  The other search options follow step by step (their names are still struck through).
+  stays usable while searching. The file list pane shows a blue header with the search string and a
+  summary, then a table of the files (file name, folder, number of matches). The matching lines pane
+  shows each file's path, then its lines (`000012: text`, hits in green). Problems (missing folder,
+  unreadable file) are listed too. The other search options follow step by step (their names are
+  still struck through).
+- **Result colours and fonts (CSS):** each pane has its own style sheet, `FileList.css` and
+  `MatchingLines.css`. The standard files are in `Defaults\` next to the exe; to change the look,
+  copy one to `%AppData%\GrepWinUi\` and edit it there. Your copy is used from the next search on.
+- **Search → Cancel Search:** stops the running search of the active result window. The panes show
+  what was found until then, marked "cancelled". Greyed out while no search runs.
 - **File → Save search result:** saves the result of the active window to a `*.result.json` file:
   the search parameters, the file list and the matching lines (with line numbers and hit positions),
   plus the counts and problems. Greyed out while the active window has no result.
