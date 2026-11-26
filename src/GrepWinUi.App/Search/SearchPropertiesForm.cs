@@ -58,23 +58,24 @@ internal sealed class SearchPropertiesForm : Form
 
     // --- File types ---
     private readonly ComboBox _fileSpec = TextCombo();
-    private readonly CheckBox _regexFileNames = NoEffect(Check("File names as RegEx"));
+    private readonly CheckBox _regexFileNames = Check("File names as RegEx");
     private readonly CheckBox _searchInZip = NoEffect(Check("Search inside ZIP archives"));
     private readonly CheckBox _skipBinaryFiles = NoEffect(Check("Skip binary files"));
     private readonly CheckBox _onlyBinaryFiles = NoEffect(Check("Only binary files"));
-    private readonly CheckBox _skipByExtension = NoEffect(Check("Skip by extension"));
+    private readonly CheckBox _skipByExtension = Check("Skip by extension");
     private readonly ComboBox _skipExtensions = TextCombo(400);
 
     // --- Folders ---
     private readonly ComboBox _folders = TextCombo();
     private readonly CheckBox _recurseFolders = Check("Include subfolders", isChecked: true);
-    private readonly CheckBox _regexFolderNames = NoEffect(Check("Folder names as RegEx"));
-    private readonly RadioButton _regexPathAndFileName = NoEffect(Radio("path and file name"));
-    private readonly RadioButton _regexPathName = NoEffect(Radio("path name"));
-    private readonly CheckBox _baseNameRegex = NoEffect(Check("Base name as RegEx"));
+    private readonly CheckBox _regexFolderNames = Check("Folder names as RegEx");
+    private readonly RadioButton _regexPathAndFileName = Radio("path and file name");
+    private readonly RadioButton _regexPathName = Radio("path name");
+    private readonly CheckBox _baseNameRegex = Check("Base name as RegEx");
     private readonly TextBox _baseNamePattern = new() { Width = 300 };
+    private readonly TextBox _folderNamePattern = new() { Width = 300 };
     private readonly CheckBox _countFilesFirst = Check("Count files first (progress in %)");
-    private readonly CheckBox _skipFolders = NoEffect(Check("Skip folders"));
+    private readonly CheckBox _skipFolders = Check("Skip folders");
     private readonly ComboBox _skipFolderNames = TextCombo(400);
 
     // --- Lines around a match ---
@@ -177,6 +178,7 @@ internal sealed class SearchPropertiesForm : Form
 
         _recurseFolders.Checked = q.IncludeSubfolders;
         _regexFolderNames.Checked = q.FolderNamesAsRegex;
+        _folderNamePattern.Text = q.FolderNamePattern;
         _regexPathAndFileName.Checked = q.RegularExpressionOn == RegexTarget.PathAndFileName;
         _regexPathName.Checked = q.RegularExpressionOn == RegexTarget.PathName;
         _baseNameRegex.Checked = q.BaseNameAsRegex;
@@ -232,6 +234,7 @@ internal sealed class SearchPropertiesForm : Form
         q.FolderName = _folders.Text;
         q.IncludeSubfolders = _recurseFolders.Checked;
         q.FolderNamesAsRegex = _regexFolderNames.Checked;
+        q.FolderNamePattern = _folderNamePattern.Text;
         q.RegularExpressionOn = _regexPathName.Checked ? RegexTarget.PathName : RegexTarget.PathAndFileName;
         q.BaseNameAsRegex = _baseNameRegex.Checked;
         q.BaseNamePattern = _baseNamePattern.Text;
@@ -309,15 +312,21 @@ internal sealed class SearchPropertiesForm : Form
 
     /// <summary>
     /// Exit and Start search: keep the edited values and close. Start search with an invalid regular
-    /// expression shows the problem and keeps the dialog open.
+    /// expression (search string, file names, folder names, base name) shows the problems and keeps the dialog open.
     /// </summary>
     private void Accept(bool startSearch)
     {
-        if (startSearch && _useRegex.Checked && LineMatcher.RegexError(_searchString.Text) is string error)
+        if (startSearch)
         {
-            MessageBox.Show(this, error, "Invalid regular expression", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            _searchString.Focus();
-            return;
+            SearchQuery check = _query.Copy();
+            SaveTo(check, _view with { });
+            IReadOnlyList<string> problems = FileFilter.RegexProblems(check);
+            if (problems.Count > 0)
+            {
+                MessageBox.Show(this, string.Join("\n\n", problems), "Invalid regular expression",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
         }
 
         SaveTo(_query, _view);
@@ -439,7 +448,7 @@ internal sealed class SearchPropertiesForm : Form
         table.Controls.Add(_baseNameRegex, 1, 0);
         table.Controls.Add(_regexFolderNames, 0, 1);
         table.Controls.Add(DependentRow(_baseNameRegex, _baseNamePattern), 1, 1);
-        Control regexKind = DependentRow(_regexFolderNames, NoEffect(Caption("Regular expression on:")), _regexPathAndFileName, _regexPathName);
+        Control regexKind = DependentRow(_regexFolderNames, _folderNamePattern, Caption("on (below the start folder):"), _regexPathAndFileName, _regexPathName);
         table.Controls.Add(regexKind, 0, 2);
         table.SetColumnSpan(regexKind, 2);
 

@@ -112,8 +112,11 @@ public sealed class SearchQuery
     /// <summary>Search in subfolders too.</summary>
     public bool IncludeSubfolders { get; set; } = true;
 
-    /// <summary>The folder names are regular expressions.</summary>
+    /// <summary>Filter files by <see cref="FolderNamePattern"/> on their path below the start folder.</summary>
     public bool FolderNamesAsRegex { get; set; } = false;
+
+    /// <summary>Regular expression for <see cref="FolderNamesAsRegex"/> (see <see cref="RegularExpressionOn"/>).</summary>
+    public string FolderNamePattern { get; set; } = "";
 
     /// <summary>What the folder regular expression is matched against.</summary>
     public RegexTarget RegularExpressionOn { get; set; } = RegexTarget.PathAndFileName;
@@ -143,14 +146,14 @@ public sealed class SearchQuery
         JsonSerializer.Deserialize<SearchQuery>(JsonSerializer.Serialize(this))!;
 }
 
-/// <summary>What a folder regular expression is matched against.</summary>
+/// <summary>What the folder names RegEx is matched against (always the part below the start folder).</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<RegexTarget>))]
 public enum RegexTarget
 {
-    /// <summary>Full path including the file name.</summary>
+    /// <summary>Subfolder path and file name, e.g. <c>src\tests\a.cs</c>.</summary>
     PathAndFileName,
 
-    /// <summary>Folder path only.</summary>
+    /// <summary>Subfolder path only, e.g. <c>src\tests</c> ("" for files in the start folder).</summary>
     PathName,
 }
 

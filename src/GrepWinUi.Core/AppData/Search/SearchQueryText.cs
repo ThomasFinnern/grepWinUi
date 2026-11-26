@@ -51,6 +51,7 @@ public static class SearchQueryText
         SearchQuery d = new();
         return query.IncludeSubfolders != d.IncludeSubfolders
             || query.FolderNamesAsRegex != d.FolderNamesAsRegex
+            || query.FolderNamePattern != d.FolderNamePattern
             || query.BaseNameAsRegex != d.BaseNameAsRegex
             || query.SkipFolders != d.SkipFolders;
     }

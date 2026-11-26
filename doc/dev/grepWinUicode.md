@@ -141,11 +141,28 @@ No admin rights needed: nothing is written next to the exe.
   `ContextLine(LineNumber, Text)` (step 22: non-matching line kept near a match; `ContextLines` null →
   empty list, so result files saved before step 22 still load), `KeepLines(Before, After)`,
   `SearchProgress(FilesSearched, FoldersSearched, FilesMatched, CurrentFile)`.
-- `FileFinder`: `Find(folder, fileNames, includeSubfolders, cancel)` — one folder (surrounding quotes
-  removed), file names = space separated Win32 wildcards (`FileSystemName.MatchesWin32Expression`,
-  case ignored, `*.*` = all, empty = all). Each file once (one pass per folder, all patterns checked),
-  files of a folder before its subfolders, both sorted by name. Missing / unreadable folders →
-  `Problems`, the search goes on. `FoldersSearched` counts.
+- `FileFinder`: `Find(query, cancel)` (step 23; `Find(folder, fileNames, includeSubfolders, cancel)` builds
+  a query) — start folders from `FolderList.Split(query.FolderName)`, filters from `FileFilter.Create(query)`
+  (created at once, so an invalid RegEx throws `ArgumentException` before iterating). File names = space
+  separated Win32 wildcards (`FileSystemName.MatchesWin32Expression`, case ignored, `*.*` = all, empty =
+  all). Each file once (one pass per folder, all patterns checked; a `HashSet` across overlapping start
+  folders), files of a folder before its subfolders, both sorted by name. Missing / unreadable folders →
+  `Problems`, the search goes on. `FoldersSearched` counts. Returned paths are full paths.
+- `FolderList.Split(text, folderExists)` (step 23): blanks separate, double quotes keep blanks (as the old
+  `ExtractFolderListWithApostrophes`), duplicates (case ignored) dropped; a whole text with blanks that is
+  an existing folder is one folder (old inputs without quotes keep working).
+- `FileFilter` (step 23), all case-insensitive, RegEx = `IsMatch` (part is enough), `CultureInvariant`,
+  timeout `LineMatcher.RegexTimeout`:
+  - `Accepts(relativeFolder, fileName)`: file names (wildcards, or one RegEx with `FileNamesAsRegex`),
+    not skipped by extension (`ExtensionPatterns`: `*.exe` / `.exe` / `exe` → `*.exe`), and with
+    `FolderNamesAsRegex` the new `SearchQuery.FolderNamePattern` on the path below the start folder:
+    `RegexTarget.PathName` = relative folder ("" in the start folder), `PathAndFileName` = relative folder
+    + file name. The start folder's own path is never matched (user decision).
+  - `SkipsFolder(subfolder)`: "Skip folders" words as wildcards on the last name; not entered at all.
+  - `SearchesFilesIn(folder)`: "Base name as RegEx" on the folder's last name; all folders are still
+    walked, only the files of non-matching folders are left out (user decision, also the start folder).
+  - `RegexProblems(query)`: problems of all switched-on RegEx inputs ("Search string: …", "File names:
+    …", "Folder names: …", "Base name: …"); the dialog's Start search shows them and stays open.
 - `LineMatcher` (step 21): abstract, `Find(line)` = all hits left to right, not overlapping.
   `Create(query)` picks one of two kinds (decided in step 21: regex only when asked for):
   - `PlainText(text, matchCase, wholeWords)`: `IndexOf` with `Ordinal` / `OrdinalIgnoreCase`; whole

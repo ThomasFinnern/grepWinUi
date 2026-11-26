@@ -1,12 +1,14 @@
 using System.IO.Enumeration;
+using GrepWinUi.Core.AppData.Search;
 
 namespace GrepWinUi.Core.Search;
 
 /// <summary>
-/// Finds the files to search: one folder (and its subfolders), file names as space separated wildcards
-/// (e.g. "*.cs *.md", Windows rules: "*.*" means all files, case is ignored). Each file comes once,
-/// files of a folder before its subfolders, both sorted by name. Folders that can't be read are skipped
-/// and noted in <see cref="Problems"/>.
+/// Finds the files to search: the folders of "Folder name" (<see cref="FolderList"/>, each with its
+/// subfolders if wanted), filtered by <see cref="FileFilter"/> (file names as wildcards like "*.cs *.md"
+/// with Windows rules or as RegEx, skip by extension, skip folders, folder names / base name as RegEx).
+/// Each file comes once, files of a folder before its subfolders, both sorted by name. Missing folders
+/// and folders that can't be read are skipped and noted in <see cref="Problems"/>.
 /// </summary>
 public sealed class FileFinder
 {
@@ -30,27 +32,55 @@ public sealed class FileFinder
         patterns.Any(pattern => FileSystemName.MatchesWin32Expression(
             FileSystemName.TranslateWin32Expression(pattern), fileName, ignoreCase: true));
 
-    /// <summary>Removes surrounding spaces and quotes of a folder name.</summary>
-    public static string CleanFolder(string folder) => folder.Trim().Trim('"').Trim();
+    /// <summary>Files in <paramref name="folder"/> matching <paramref name="fileNames"/> (no other filters).</summary>
+    public IEnumerable<string> Find(string folder, string fileNames, bool includeSubfolders, CancellationToken cancel) =>
+        Find(new SearchQuery { FolderName = folder, FileNames = fileNames, IncludeSubfolders = includeSubfolders }, cancel);
 
-    /// <summary>Files in <paramref name="folder"/> matching <paramref name="fileNames"/>.</summary>
-    public IEnumerable<string> Find(string folder, string fileNames, bool includeSubfolders, CancellationToken cancel)
+    /// <summary>Files of the folders and filters of <paramref name="query"/>.</summary>
+    /// <exception cref="ArgumentException">A RegEx of the filters is not valid (thrown at once, not while iterating).</exception>
+    public IEnumerable<string> Find(SearchQuery query, CancellationToken cancel)
     {
-        string root = CleanFolder(folder);
-        if (root.Length == 0)
+        FileFilter filter = FileFilter.Create(query);
+        IReadOnlyList<string> folders = FolderList.Split(query.FolderName);
+        if (folders.Count == 0)
         {
             _problems.Add("No folder given.");
             return [];
         }
-        if (!Directory.Exists(root))
+
+        List<string> roots = [];
+        foreach (string folder in folders)
         {
-            _problems.Add($"Folder not found: '{root}'");
-            return [];
+            if (Directory.Exists(folder))
+            {
+                roots.Add(folder);
+            }
+            else
+            {
+                _problems.Add($"Folder not found: '{folder}'");
+            }
         }
-        return FindIn(root, Patterns(fileNames), includeSubfolders, cancel);
+        return FindInAll(roots, filter, query.IncludeSubfolders, cancel);
     }
 
-    private IEnumerable<string> FindIn(string folder, IReadOnlyList<string> patterns, bool includeSubfolders, CancellationToken cancel)
+    /// <summary>Files of all start folders; a file found from two overlapping start folders comes once.</summary>
+    private IEnumerable<string> FindInAll(List<string> roots, FileFilter filter, bool includeSubfolders, CancellationToken cancel)
+    {
+        HashSet<string> found = new(StringComparer.OrdinalIgnoreCase);
+        foreach (string root in roots)
+        {
+            string fullRoot = Path.GetFullPath(root);
+            foreach (string file in FindIn(fullRoot, fullRoot, filter, includeSubfolders, cancel))
+            {
+                if (found.Add(file))
+                {
+                    yield return file;
+                }
+            }
+        }
+    }
+
+    private IEnumerable<string> FindIn(string root, string folder, FileFilter filter, bool includeSubfolders, CancellationToken cancel)
     {
         if (cancel.IsCancellationRequested)
         {
@@ -58,15 +88,20 @@ public sealed class FileFinder
         }
 
         FoldersSearched++;
-        foreach (string file in Read(folder, Directory.EnumerateFiles))
+        if (filter.SearchesFilesIn(folder))
         {
-            if (cancel.IsCancellationRequested)
+            string relative = Path.GetRelativePath(root, folder);
+            relative = relative == "." ? "" : relative;
+            foreach (string file in Read(folder, Directory.EnumerateFiles))
             {
-                yield break;
-            }
-            if (Matches(Path.GetFileName(file), patterns))
-            {
-                yield return file;
+                if (cancel.IsCancellationRequested)
+                {
+                    yield break;
+                }
+                if (filter.Accepts(relative, Path.GetFileName(file)))
+                {
+                    yield return file;
+                }
             }
         }
 
@@ -76,7 +111,11 @@ public sealed class FileFinder
         }
         foreach (string subfolder in Read(folder, Directory.EnumerateDirectories))
         {
-            foreach (string file in FindIn(subfolder, patterns, includeSubfolders, cancel))
+            if (filter.SkipsFolder(subfolder))
+            {
+                continue;
+            }
+            foreach (string file in FindIn(root, subfolder, filter, includeSubfolders, cancel))
             {
                 yield return file;
             }

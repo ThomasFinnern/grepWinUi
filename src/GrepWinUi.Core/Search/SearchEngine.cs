@@ -52,7 +52,15 @@ public static class SearchEngine
         int matchCount = 0;
         TimeSpan lastReport = TimeSpan.Zero;
 
-        IEnumerable<string> paths = finder.Find(query.FolderName, query.FileNames, query.IncludeSubfolders, cancel);
+        IEnumerable<string> paths;
+        try
+        {
+            paths = finder.Find(query, cancel);
+        }
+        catch (ArgumentException ex)
+        {
+            return new SearchResult(query, [], 0, 0, 0, time.Elapsed, Cancelled: false, [$"Invalid regular expression: {ex.Message}"]);
+        }
         int? totalFiles = null;
         if (query.CountFilesFirst)
         {

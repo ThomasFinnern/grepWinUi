@@ -56,6 +56,22 @@ redesign from start with the help of AI
   shows each file's path, then its lines (`000012: text`, hits in green). Problems (missing folder,
   unreadable file) are listed too. The other search options follow step by step (their names are
   still struck through).
+- **File and folder filters** (search properties dialog, `[+]` of File names and Folder name):
+  - **Several folders:** separate them with blanks in "Folder name"; put a folder with blanks in
+    double quotes (`"d:\My Folder" e:\src`). A single folder with blanks also works without quotes.
+    Each file is searched once, also when folders overlap; a missing folder is listed as a problem.
+  - **Include subfolders:** search the subfolders too.
+  - **File names as RegEx:** "File names" is one regular expression on the file name (upper / lower
+    case ignored, a part of the name is enough), e.g. `\.(cs|md)$`.
+  - **Skip by extension:** e.g. `*.exe .dll obj` skips files with these extensions.
+  - **Skip folders:** e.g. `.git bin obj*` (wildcards allowed); these subfolders and everything below
+    them are not searched.
+  - **Folder names as RegEx:** a regular expression on the path **below** the start folder, either
+    "path and file name" (`src\tests\a.cs`) or "path name" (`src\tests`, empty for files in the start
+    folder). Example: `\\tests$` with "path name" searches only folders named `tests`.
+  - **Base name as RegEx:** only files whose own folder's last name matches are searched, e.g.
+    `^(src|tests)$`; all subfolders are still looked into.
+  - Start search checks every regular expression that is switched on and shows what is wrong.
 - **Search string options** (search properties dialog, Search string section):
   - **Match case:** upper and lower case must match; without it case is ignored.
   - **Whole words only:** a hit must not have a letter, digit or `_` directly before or after it
