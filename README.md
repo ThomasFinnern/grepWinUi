@@ -38,6 +38,11 @@ redesign from start with the help of AI
   summary and the files with their number of hits, the matching lines pane shows each file with its
   lines (`line number: text`, hits marked). Problems (missing folder, unreadable file) are listed too.
   The other search options follow step by step (their names are still struck through).
+- **File → Save search result:** saves the result of the active window to a `*.result.json` file:
+  the search parameters, the file list and the matching lines (with line numbers and hit positions),
+  plus the counts and problems. Greyed out while the active window has no result.
+- **File → Open search result:** opens a saved `*.result.json` file in a new result window and shows
+  its lists without searching again. Both use the same start folder as the search query files.
 - **Program start:** without an open result window, a new empty one opens together with its
   search properties dialog.
 - **Search → Search (Ctrl+F):** opens the **Search properties** dialog over the active result window

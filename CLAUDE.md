@@ -251,7 +251,9 @@ Second iteration: deepen step by step (each step removes the strike-through of t
 27. [ ] Result view options: Title, Line numbers, Fixed font, File names, File contents, Whole line,
        Double blanks; styling like in the old program
 28. [ ] Result clicks: click on a file jumps to its lines; double click opens the "show file" form
-29. [ ] Save/open search results and the recent result files list (File menu)
+29. [ ] Recent result files list (File → Last used search files); "same search already open →
+       reload that window" as in the old program. (File → Save / Open search result with
+       `*.result.json` was done in between after step 17.)
 30. [ ] Reopen the last forms on start; the dialog then opens for the last active result form
        if "Open search form" is set in Settings (On start of program)
 31. [ ] Search in found files ("Only in files of current result", Search → Search in Files),

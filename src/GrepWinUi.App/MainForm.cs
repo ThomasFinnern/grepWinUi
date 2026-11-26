@@ -12,12 +12,13 @@ using SaveAndLoad;
 namespace GrepWinUi.App;
 
 /// <summary>Main application window: MDI container for the search result forms.</summary>
-public sealed class MainForm : Form
+public sealed partial class MainForm : Form
 {
     private readonly ObjectStore _store;
     private readonly SearchLists _lists;
     private readonly LastUsedFiles _lastUsed;
     private readonly ToolStripItem _saveQueryItem;
+    private readonly ToolStripItem _saveResultItem;
     private Task<CoreWebView2Environment>? _webViewEnvironment;
     private int _resultFormCount;
 
@@ -42,19 +43,25 @@ public sealed class MainForm : Form
 
         MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(
             OpenSettings, ExitApp, NewSearch, EditSearch, OpenSearchQuery, LoadSearchQuery, SaveSearchQuery,
+            OpenSearchResult, SaveSearchResult,
             EditSearchStringTokens, EditFileNameTokens, EditFolderNameTokens, LayoutMdi));
         MainMenuStrip = menuStrip;
         Controls.Add(menuStrip);
         Controls.Add(new MainStatusBar());
 
         _saveQueryItem = menuStrip.Items.Find(MainMenu.SaveSearchQueryName, searchAllChildren: true).Single();
+        _saveResultItem = menuStrip.Items.Find(MainMenu.SaveSearchResultName, searchAllChildren: true).Single();
         UpdateMenuState();
         MdiChildActivate += (_, _) => UpdateMenuState();
         Shown += (_, _) => OnFirstShown();
     }
 
-    /// <summary>Items that need an active result form are greyed out without one.</summary>
-    private void UpdateMenuState() => _saveQueryItem.Enabled = ActiveMdiChild is ResultForm;
+    /// <summary>Items that need an active result form (or its result) are greyed out without one.</summary>
+    private void UpdateMenuState()
+    {
+        _saveQueryItem.Enabled = ActiveMdiChild is ResultForm;
+        _saveResultItem.Enabled = ActiveMdiChild is ResultForm { Result: not null };
+    }
 
     /// <summary>Program start: without an open result form, a new empty one with its search properties dialog.</summary>
     private void OnFirstShown()
@@ -75,7 +82,10 @@ public sealed class MainForm : Form
     private void NewSearch() => OpenResultForm(_lists.StartQuery(Config));
 
     /// <summary>New result form with <paramref name="query"/> and a copy of the view settings, then its search properties dialog.</summary>
-    private void OpenResultForm(SearchQuery query)
+    private void OpenResultForm(SearchQuery query) => ShowSearchProperties(CreateResultForm(query));
+
+    /// <summary>New, shown result form with <paramref name="query"/> and a copy of the view settings.</summary>
+    private ResultForm CreateResultForm(SearchQuery query)
     {
         _resultFormCount++;
         ResultForm form = new(query, Config.ResultView with { }, WebViewEnvironment(), _resultFormCount)
@@ -84,8 +94,9 @@ public sealed class MainForm : Form
             Icon = Icon,
         };
         form.FormClosed += (_, _) => BeginInvoke(UpdateMenuState);
+        form.ResultChanged += (_, _) => UpdateMenuState();
         form.Show();
-        ShowSearchProperties(form);
+        return form;
     }
 
     /// <summary>File → Open search query: a query file opens in a new result form with its search properties dialog.</summary>
@@ -132,7 +143,7 @@ public sealed class MainForm : Form
             Title = "Save search query",
             Filter = SearchQueryFile.DialogFilter,
             DefaultExt = SearchQueryFile.Extension,
-            InitialDirectory = QueryFileFolder(),
+            InitialDirectory = FileDialogFolder(),
             FileName = "SearchQuery" + SearchQueryFile.Extension,
         };
         if (dialog.ShowDialog(this) != DialogResult.OK)
@@ -158,7 +169,7 @@ public sealed class MainForm : Form
         {
             Title = title,
             Filter = SearchQueryFile.DialogFilter,
-            InitialDirectory = QueryFileFolder(),
+            InitialDirectory = FileDialogFolder(),
         };
         if (dialog.ShowDialog(this) != DialogResult.OK)
         {
@@ -182,7 +193,7 @@ public sealed class MainForm : Form
     /// Start folder of the file dialogs: folder of the last saved / opened / loaded file,
     /// at the beginning the app's user folder (%AppData%\GrepWinUi, created if missing).
     /// </summary>
-    private string QueryFileFolder()
+    private string FileDialogFolder()
     {
         string appFolder = _store.Folders.UserFolder;
         try
@@ -196,10 +207,16 @@ public sealed class MainForm : Form
         return _lastUsed.FileDialogFolder(appFolder);
     }
 
-    /// <summary>Remembers the query file as last used and saves <c>LastUsed.json</c> (problems are ignored: only a start folder).</summary>
+    /// <summary>Remembers the query file as last used and saves <c>LastUsed.json</c>.</summary>
     private void RememberQueryFile(string path)
     {
         _lastUsed.RememberSearchQueryFile(path);
+        SaveLastUsed();
+    }
+
+    /// <summary>Saves <c>LastUsed.json</c> (problems are ignored: only a start folder is lost).</summary>
+    private void SaveLastUsed()
+    {
         try
         {
             _store.Save(_lastUsed);

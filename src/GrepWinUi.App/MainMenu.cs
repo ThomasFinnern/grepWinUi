@@ -8,6 +8,9 @@ internal static class MainMenu
     /// <summary>Name of File → Save search query (enabled only while a result form is active).</summary>
     public const string SaveSearchQueryName = "saveSearchQuery";
 
+    /// <summary>Name of File → Save search result (enabled only while the active result form has a result).</summary>
+    public const string SaveSearchResultName = "saveSearchResult";
+
     /// <summary>Creates the menu bar. Items without a handler in <paramref name="actions"/> are marked with "*".</summary>
     public static MenuStrip Create(MainMenuActions actions)
     {
@@ -50,8 +53,8 @@ internal static class MainMenu
         Item("Close All searches"),
         Item("Close All but this search"),
         Separator(),
-        Item("Open search result"),
-        Item("Save search result"),
+        Item("Open search result", onClick: actions.OpenSearchResult),
+        Named(Item("Save search result", onClick: actions.SaveSearchResult), SaveSearchResultName),
         Menu("Save search result as ...",
             Item("Save as text"),
             Item("Save file list html"),
@@ -164,6 +167,8 @@ internal static class MainMenu
 /// <param name="OpenSearchQuery">File → Open search query: query file in a new result form.</param>
 /// <param name="LoadSearchQuery">File → Load search query: query file replaces the active form's query.</param>
 /// <param name="SaveSearchQuery">File → Save search query: active form's query to a file.</param>
+/// <param name="OpenSearchResult">File → Open search result: result file in a new result form.</param>
+/// <param name="SaveSearchResult">File → Save search result: active form's result to a file.</param>
 /// <param name="EditSearchStringTokens">Options → Search string token: edit the search string list.</param>
 /// <param name="EditFileNameTokens">Options → File name token: edit the file names list.</param>
 /// <param name="EditFolderNameTokens">Options → Folder name token: edit the folder names list.</param>
@@ -176,6 +181,8 @@ internal sealed record MainMenuActions(
     Action OpenSearchQuery,
     Action LoadSearchQuery,
     Action SaveSearchQuery,
+    Action OpenSearchResult,
+    Action SaveSearchResult,
     Action EditSearchStringTokens,
     Action EditFileNameTokens,
     Action EditFolderNameTokens,

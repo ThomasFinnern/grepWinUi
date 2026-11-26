@@ -42,6 +42,7 @@ No admin rights needed: nothing is written next to the exe.
 | `FolderNameList` | `FolderNames.json` (`Items` = used, `Fixed` = fixed tokens) |
 | `SearchQueryList` | `SearchQueries.json` |
 | `SearchQuery` (File → Save search query) | any `*.json` the user picks; header `Kind` = "grepWinUi search query", `Version` = 1, then `Query` |
+| `SearchResult` (File → Save search result) | `*.result.json` the user picks; header `Kind` = "grepWinUi search result", `Version` = 1, `Saved` (date), then `Result` (query, files, lines with hits, counts, problems) |
 
 ## 3. Libraries
 
@@ -149,6 +150,10 @@ No admin rights needed: nothing is written next to the exe.
   UTF-8 (`StreamReader`, UTF-16/32 detected by byte order mark; ANSI detection: step 25; binary files
   are read like text until step 25). Unreadable file → `Problems`. Progress at most every 100 ms and
   once at the end. Cancel → result so far with `Cancelled = true`, no exception.
+- `SearchResultFile`: `Save(result, path)` (indented JSON with header, temp file then replace),
+  `Load(path)` (throws `InvalidDataException` for broken files, query files or other JSON),
+  `WithExtension(path)` (adds `.result.json`, replaces a plain `.json`). The result records are
+  stored as they are (`System.Text.Json` fills the positional records through their constructors).
 - `ResultListHtml` (interim view until the CSS layout of step 18): `FileList(result, background)`
   (summary line, problems, `<ol>` of files with hit count), `MatchingLines(result, background)` (per
   file its path, then `line number: text` with hits in `<mark>`), `Hint(text, background)`,
@@ -175,6 +180,11 @@ with the search properties dialog.
 - `OpenSearchQuery()` (File → Open search query, Ctrl+O): query file → `OpenResultForm(query)`.
 - `LoadSearchQuery()` (File → Load search query): query file → `form.ApplySearch(query, form.ViewOptions)`
   on the active result form (line counts stay), then the dialog; without one like Open.
+- `OpenSearchResult()` / `SaveSearchResult()` (File → Open / Save search result, in
+  `MainForm.ResultFiles.cs`): Open loads a `*.result.json` into a new result form
+  (`CreateResultForm(result.Query.Copy())` + `ShowResultAsync(result)`, no dialog, no search);
+  Save writes the active form's `Result` (greyed out without one; `ResultForm.ResultChanged` updates
+  the menu). Both remember the file with `LastUsedFiles.RememberResultFile` (shared start folder).
 - `SaveSearchQuery()` (File → Save search query, Alt+S): active form's `Query` → file.
   Greyed out without an active result form (`UpdateMenuState` on `MdiChildActivate` and after a
   result form closes).
@@ -234,6 +244,8 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   (a `_loading` flag stops write-back while loading). Pre/post maximum = keep values.
 - `InitPanesAsync()` (on `Load`, kept as `_panesReady`): starts both WebView2 panes with the shared
   environment and shows a hint ("No search yet …"); a missing WebView2 runtime → message box.
+- `Result` (last finished or loaded result, null while searching) and `ResultChanged`;
+  `ShowResultAsync(result)` shows a saved result without searching.
 - `RunSearchAsync()`: cancels a running search of this form, shows "Searching …", awaits
   `SearchEngine.RunAsync(Query, …)` and shows `ResultListHtml.FileList` / `MatchingLines`. Never throws
   (an unexpected error is shown in the pane); a newer search wins; closing the form cancels the search.

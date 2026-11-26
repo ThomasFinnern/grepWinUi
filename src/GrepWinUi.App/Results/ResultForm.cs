@@ -103,15 +103,17 @@ internal sealed class ResultForm : Form
         _search?.Cancel();
         using CancellationTokenSource search = new();
         _search = search;
+        SetResult(null);
         await ShowPagesAsync(
             ResultListHtml.Hint($"Searching '{Query.SearchString}' in '{Query.FolderName}' …", Background),
             ResultListHtml.Hint("", Background));
 
         string fileList;
         string matchingLines;
+        SearchResult? result = null;
         try
         {
-            SearchResult result = await SearchEngine.RunAsync(Query, progress: null, search.Token);
+            result = await SearchEngine.RunAsync(Query, progress: null, search.Token);
             fileList = ResultListHtml.FileList(result, Background);
             matchingLines = ResultListHtml.MatchingLines(result, Background);
         }
@@ -125,8 +127,30 @@ internal sealed class ResultForm : Form
         if (_search == search)
         {
             _search = null;
+            SetResult(result);
             await ShowPagesAsync(fileList, matchingLines);
         }
+    }
+
+    /// <summary>Last finished (or loaded) search result of this form; null before the first one or while searching.</summary>
+    public SearchResult? Result { get; private set; }
+
+    /// <summary>Raised when <see cref="Result"/> changes (e.g. to enable File → Save search result).</summary>
+    public event EventHandler? ResultChanged;
+
+    /// <summary>Shows a saved result (File → Open search result) without searching; a running search is cancelled.</summary>
+    public async Task ShowResultAsync(SearchResult result)
+    {
+        _search?.Cancel();
+        _search = null;
+        SetResult(result);
+        await ShowPagesAsync(ResultListHtml.FileList(result, Background), ResultListHtml.MatchingLines(result, Background));
+    }
+
+    private void SetResult(SearchResult? result)
+    {
+        Result = result;
+        ResultChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Stops a running search of this form when it is closed.</summary>
