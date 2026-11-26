@@ -169,32 +169,32 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 ## Roadmap
 One step = one session. Steps 1–16c (with 13a, 13b, 16b) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
-1. [x] Install .NET SDK (11.0.100 installed)
-1. [x] Install VS Code "C#" extension
-1. [x] Planning the reimplementation (see Architecture)
-1. [x] Skeleton: solution, Core/App/Tests projects, empty window that starts, `.gitignore`;
+2. [x] Install .NET SDK (11.0.100 installed)
+3. [x] Install VS Code "C#" extension
+4. [x] Planning the reimplementation (see Architecture)
+5. [x] Skeleton: solution, Core/App/Tests projects, empty window that starts, `.gitignore`;
        add build/run/test commands to this file
-1. [x] Main MDI window: all menus from the screenshots, status bar layout with all fields
+6. [x] Main MDI window: all menus from the screenshots, status bar layout with all fields
        from "UI spec: status bar" (placeholder texts), No "Ctrl Shift F6" toolbar; no functions
-1. [x] `lib_SaveAndLoad` library for reading/writing class objects (classes only define their content items)
-1. [x] Config: settings model using `lib_SaveAndLoad`, JSON in `%AppData%\GrepWinUi\`, standard data file
+7. [x] `lib_SaveAndLoad` library for reading/writing class objects (classes only define their content items)
+8. [x] Config: settings model using `lib_SaveAndLoad`, JSON in `%AppData%\GrepWinUi\`, standard data file
        in `Defaults`, read when no user file exists
-1. [x] Create code for first config menu item now named settings instead
-1. [x] Recent-first list (`lib_RecentList`): newest on top, duplicates move to top, size limit, saved to disk (tested)
-1. [x] Search result child form (MDI child): layout of header line with view options and the two
+9. [x] Create code for first config menu item now named settings instead
+10. [x] Recent-first list (`lib_RecentList`): newest on top, duplicates move to top, size limit, saved to disk (tested)
+11. [x] Search result child form (MDI child): layout of header line with view options and the two
        result panes (file list, matching lines) with dummy content; File → New opens one; no search yet
-1. [x] Result form: header line with view options, two WebView2 panes; HTML/CSS built in Core: basics
-1. [x] 13a Search properties form, layout only: all inputs from `searchForm.png` and the old
+12. [x] Result form: header line with view options, two WebView2 panes; HTML/CSS built in Core: basics
+13a. [x] Search properties form, layout only: all inputs from `searchForm.png` and the old
        `frmSearchProperties`; opened with Search → Search (Ctrl+F) as a modal dialog over the active
        result form (without one, a new result form is created first); File → New and program start
        without a result form: new empty result form with the dialog open; empty dropdowns, no data, no search
-1. [x] 13b Search query model: a `SearchQuery` class in Core with exactly the fields of the form;
+13b. [x] Search query model: a `SearchQuery` class in Core with exactly the fields of the form;
        recent-first lists (search strings, file specs, folders, past queries); tests
-1. [x] 14 Connect form and model: the form is filled with the active result form's search data
+14. [x] Connect form and model: the form is filled with the active result form's search data
        and writes the changes back to it; dropdowns filled from the lists; no search.
        Line counts: the dialog's show/keep values and the header line's pre/post lines edit the same
        `ViewOptions` of the result form (copied from the settings when the form is created).
-1. [x] 15 File menu "Save search query" (Alt+S): write the active result form's query to a file
+15. [x] File menu "Save search query" (Alt+S): write the active result form's query to a file
        (own JSON format). "Open search query" (Ctrl+O): load a query file; opening starts a new
        result (search) form with that query and its search properties dialog.
        New File menu item "Load search query" (below "Open search query"): load a query file and
@@ -206,37 +206,37 @@ One step = one session. Steps 1–16c (with 13a, 13b, 16b) are done.
        the search results will use the same folder.
        Also: Tab order in the search form (search string → file names → folder name first);
        menu shortcuts (Ctrl+F, …) work inside the WebView2 panes.
-1. [x] 16 Options menu "Search string token" (was "Search string lists"): token list as in the old
+16. [x] Options menu "Search string token" (was "Search string lists"): token list as in the old
        program = used items (newest first) + fixed items (never moved by a new / known entry);
        dropdown order from 4 parameters (pre fixed count, first fixed count, max count, max fixed count;
        start values 7 / 3 / 30 / 15) in a separate Settings page "Search string token"; edit dialog
        (ticked = fixed, always in dropdown order, Add, Delete, Move up/down, the 4 parameters bottom
        right shared with Settings, Exit, Cancel). Generic parts: `PinnedRecentList`, `TokenListPage`,
        `TokenListForm`.
-1. [x] 16b Options menu "File name token" (was "Search files spec. list"): same as 16 for the file
+16b. [x] Options menu "File name token" (was "Search files spec. list"): same as 16 for the file
        names list, own Settings page. Token dialog reworked for both lists: two lists
        "Standard entries" (used) on top and "Pre entries" (fixed) below, buttons "To pre ↓" /
        "To standard ↑" (new additions go to the top), no checkboxes
-1. [x] 16c Options menu "Folder name token" (was "Search folder list"): same as 16 for the folder
+16c. [x] Options menu "Folder name token" (was "Search folder list"): same as 16 for the folder
        names list, own Settings page (start values 7 / 3 / 40 / 15)
-1. [ ] 17 Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
+17. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
        (regex, whole word, match case, lines before/after); async, cancellable, progress
-1. [ ] Result form: two WebView2 panes; HTML/CSS built in Core: fill with search data, style like in old project with classes
-1. [ ] Connect search to results: start/cancel
-1. [ ] Status bar Title and Info: short and long text about the current task / result
-1. [ ] Status bar Working: % of files done (config option, needs the file count before searching),
+18. [ ] Result form: two WebView2 panes; HTML/CSS built in Core: fill with search data, style like in old project with classes
+19. [ ] Connect search to results: start/cancel
+20. [ ] Status bar Title and Info: short and long text about the current task / result
+21. [ ] Status bar Working: % of files done (config option, needs the file count before searching),
        otherwise marquee animation while an action runs
-1. [ ] Status bar Folder (last folder name), Files (read / all) and Time (counting while a search runs)
-1. [ ] Result clicks: click on a file jumps to its lines; double click opens the "show file" form
-1. [ ] Save/open search results and the recent result files list (File menu)
-1. [ ] Reopen the last forms on start; the dialog then opens for the last active result form
+22. [ ] Status bar Folder (last folder name), Files (read / all) and Time (counting while a search runs)
+23. [ ] Result clicks: click on a file jumps to its lines; double click opens the "show file" form
+24. [ ] Save/open search results and the recent result files list (File menu)
+25. [ ] Reopen the last forms on start; the dialog then opens for the last active result form
        if "Open search form" is set in Settings (On start of program)
-1. [ ] Replace
-1. [ ] Search in found files, "search again" key
-1. [ ] Options dialog: config editor, CSS colors
-1. [ ] `lib_CommandLine` library for command line parsing (program only defines its items)
-1. [ ] Command line
-1. [ ] Options menu: "Command line search parameters"
+26. [ ] Replace
+27. [ ] Search in found files, "search again" key
+28. [ ] Options dialog: config editor, CSS colors
+29. [ ] `lib_CommandLine` library for command line parsing (program only defines its items)
+30. [ ] Command line
+31. [ ] Options menu: "Command line search parameters"
 
 
 Ideas for later (not planned): ZIP search, printing, Explorer right-click entry,
