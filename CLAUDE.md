@@ -89,6 +89,8 @@ tests/lib_RecentList.Tests/  xUnit tests for lib_RecentList
     `SearchStringList`, `FileNamesList`, `FolderNameList` (30/30/40, file and folder names ignore case)
     and `SearchQueryList` (past queries).
   - `AppData/CommandLine/`: command line item definitions.
+- The search itself lives in Core under `Search/` (`SearchEngine`, `FileFinder`, `LineMatcher`,
+  result records); details in `doc/dev/grepWinUicode.md`.
 - A new result form starts with a **copy** of the current config settings
   (`config.ResultView with { }`), incl. the Keep lines (prepared lines before/after a match).
   The reusable mechanics stay in the `lib_` projects. No global "main" object: `Program.cs` / `MainForm`
@@ -167,7 +169,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–16c (with 13a, 13b, 16b) are done.
+One step = one session. Steps 1–17 (with 13a, 13b, 16b, 16c) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 2. [x] Install .NET SDK (11.0.100 installed)
 3. [x] Install VS Code "C#" extension
@@ -220,16 +222,16 @@ One step = one session. Steps 1–16c (with 13a, 13b, 16b) are done.
 16c. [x] Options menu "Folder name token" (was "Search folder list"): same as 16 for the folder
        names list, own Settings page (start values 7 / 3 / 40 / 15)
 First iteration: plain search with visible results.
-17. [ ] Basic search engine (Core): one folder (incl. subfolders), file names as space separated
+17. [x] Basic search engine (Core): one folder (incl. subfolders), file names as space separated
        wildcards (`*.cs *.md`), plain text line search ignoring case; result model (files with their
-       matching lines and line numbers); async, cancellable, progress (files done); tests with temp folders
-18. [ ] Result layout basics + start/cancel: HTML of both panes built in Core from the result
+       matching lines and line numbers); async, cancellable, progress (files done); tests with temp folders.
+       Also: "Start search" searches and both panes show the result as plain lists (`ResultListHtml`)
+18. [ ] Result layout basics + cancel: HTML of both panes built in Core from the result
        (header, file list, matching lines with highlighted hits, CSS classes like in the old program).
        CSS in outside files, one per pane: `FileList.css`, `MatchingLines.css`; standard files in
        `Defaults\`, user copies in `%AppData%\GrepWinUi\` (user file → defaults file → built-in);
        Core puts the CSS text into the HTML as `<style>`.
-       "Start search" in the search form searches, Search → Cancel Search stops (was "Connect search
-       to results")
+       Search → Cancel Search stops a running search ("Start search" already searches since step 17)
 
 Second iteration: deepen step by step (each step removes the strike-through of the parameters it makes work).
 19. [ ] Status bar Title, Info, Folder (last folder name), Files (read / all), Time (counting while
@@ -268,5 +270,5 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 17: Basic search engine (Core): one folder incl. subfolders, file name wildcards, plain text
-line search ignoring case, result model; async, cancellable, progress.
+In between (part of step 29): File → Save / Open search result (`*.result.json`: search parameters,
+file list, lines with hits). Then step 18: result layout basics with CSS files + cancel.

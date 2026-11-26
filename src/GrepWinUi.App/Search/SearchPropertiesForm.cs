@@ -66,7 +66,7 @@ internal sealed class SearchPropertiesForm : Form
 
     // --- Folders ---
     private readonly ComboBox _folders = TextCombo();
-    private readonly CheckBox _recurseFolders = NoEffect(Check("Include subfolders", isChecked: true));
+    private readonly CheckBox _recurseFolders = Check("Include subfolders", isChecked: true);
     private readonly CheckBox _regexFolderNames = NoEffect(Check("Folder names as RegEx"));
     private readonly RadioButton _regexPathAndFileName = NoEffect(Radio("path and file name"));
     private readonly RadioButton _regexPathName = NoEffect(Radio("path name"));
@@ -105,9 +105,9 @@ internal sealed class SearchPropertiesForm : Form
 
         _content = Column(
             _title,
-            Section(NoEffect(SectionTitle("Search string")), _searchString, SearchStringOptions(), expanded: true),
-            Section(NoEffect(SectionTitle("File names")), _fileSpec, FileTypeOptions(), SearchQueryText.HasFileNameOptions(_query)),
-            Section(NoEffect(SectionTitle("Folder name")), _folders, FolderOptions(), SearchQueryText.HasFolderOptions(_query)),
+            Section(SectionTitle("Search string"), _searchString, SearchStringOptions(), expanded: true),
+            Section(SectionTitle("File names"), _fileSpec, FileTypeOptions(), SearchQueryText.HasFileNameOptions(_query)),
+            Section(SectionTitle("Folder name"), _folders, FolderOptions(), SearchQueryText.HasFolderOptions(_query)),
             _countFilesFirst,
             LineNumbers(),
             _buttons);
@@ -457,13 +457,12 @@ internal sealed class SearchPropertiesForm : Form
     }
 
     /// <summary>
-    /// Cancel (Esc) discards; Exit keeps the values; Start search (Enter) keeps them and asks for
-    /// a search, which has no function yet ("*").
+    /// Cancel (Esc) discards; Exit keeps the values; Start search (Enter) keeps them and starts the search.
     /// </summary>
     private FlowLayoutPanel Buttons()
     {
         Button cancel = new() { Text = "Cancel", AutoSize = true, DialogResult = DialogResult.Cancel };
-        Button startSearch = new() { Text = "*Start search", AutoSize = true };
+        Button startSearch = new() { Text = "Start search", AutoSize = true };
         Button exit = new() { Text = "Exit", AutoSize = true };
         startSearch.Click += (_, _) => Accept(startSearch: true);
         exit.Click += (_, _) => Accept(startSearch: false);

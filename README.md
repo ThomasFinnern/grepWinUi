@@ -15,8 +15,8 @@ redesign from start with the help of AI
 - **Settings:** stored per user in `%AppData%\GrepWinUi\Config.json` (no admin rights needed).
   Until you change a setting, the standard values from `Defaults\Config.json` next to the exe are used.
 - **File → New search query (Ctrl+N):** opens a new search result window inside the main window.
-  For now it shows dummy content: a header line with view options (copied from the settings) and
-  two panes, the file list on top and the matching lines below (drag the splitter between them).
+  It has a header line with view options (copied from the settings) and two panes, the file list on
+  top and the matching lines below (drag the splitter between them).
   Needs the Microsoft Edge WebView2 Runtime (built into Windows 11).
   Then the search properties dialog opens over the new window. A new window starts with the
   newest search from the list of past searches (or the standard values).
@@ -31,6 +31,13 @@ redesign from start with the help of AI
   (`*.json`). Greyed out while no result window is active.
   The file dialogs start in the folder of the last saved, opened or loaded file (kept between program
   starts); at the very beginning in `%AppData%\GrepWinUi`. Search results will use the same folder.
+- **Search (basic version):** **Start search** searches the folder from "Folder name" (with its
+  subfolders when "Include subfolders" is ticked) for files matching "File names" (wildcards like
+  `*.cs *.md`) and finds the search string as plain text, ignoring upper / lower case. The window
+  stays usable while searching. The results are shown as simple lists: the file list pane shows a
+  summary and the files with their number of hits, the matching lines pane shows each file with its
+  lines (`line number: text`, hits marked). Problems (missing folder, unreadable file) are listed too.
+  The other search options follow step by step (their names are still struck through).
 - **Program start:** without an open result window, a new empty one opens together with its
   search properties dialog.
 - **Search → Search (Ctrl+F):** opens the **Search properties** dialog over the active result window
@@ -46,8 +53,8 @@ redesign from start with the help of AI
   The dialog shows the search of its result window; the dropdowns list the last used search strings,
   file names and folders (saved in `%AppData%\GrepWinUi\`).
   **Exit** keeps the changes for the window and remembers the texts in the dropdown lists;
-  **Start search** (Enter) also adds the whole search to the list of past searches (searching itself
-  is not there yet); **Cancel** (Esc) discards the changes. It already holds more options than the old program
+  **Start search** (Enter) also adds the whole search to the list of past searches and searches;
+  **Cancel** (Esc) discards the changes. It already holds more options than the old program
   (file date filter, skip by extension, skip folders, fixed-width and delimited fields, …), to be reviewed.
   Parameter names that have no effect yet are struck through.
 - **Windows → Cascade / Tile horizontal / Tile vertical / Arrange Icons:** arranges the result windows.

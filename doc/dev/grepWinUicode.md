@@ -132,9 +132,33 @@ No admin rights needed: nothing is written next to the exe.
   `Load(path)` (throws `InvalidDataException` when the file is broken or no query file, e.g. another
   JSON file; `IOException` / `UnauthorizedAccessException` when unreadable). Extension `.json`.
 
+### Search (namespace `GrepWinUi.Core.Search`, step 17: basic version)
+- Result model (records): `SearchResult(Query, Files, FilesSearched, FoldersSearched, MatchCount,
+  Duration, Cancelled, Problems)`, `FileResult(Path, Lines)`, `LineMatch(LineNumber, Text, Hits)`
+  (line numbers from 1), `Hit(Start, Length)` (0-based, every hit of a line),
+  `SearchProgress(FilesSearched, FoldersSearched, FilesMatched, CurrentFile)`.
+- `FileFinder`: `Find(folder, fileNames, includeSubfolders, cancel)` — one folder (surrounding quotes
+  removed), file names = space separated Win32 wildcards (`FileSystemName.MatchesWin32Expression`,
+  case ignored, `*.*` = all, empty = all). Each file once (one pass per folder, all patterns checked),
+  files of a folder before its subfolders, both sorted by name. Missing / unreadable folders →
+  `Problems`, the search goes on. `FoldersSearched` counts.
+- `LineMatcher.PlainText(text)`: plain text, `StringComparison.OrdinalIgnoreCase`, all hits left to
+  right, not overlapping. (Match case / whole words / regex: step 21.)
+- `SearchEngine.RunAsync(query, progress, cancel)`: `Task.Run` over `Run(...)` with a copy of the query.
+  Empty search string → no search, problem "Search string is empty". Files are read line by line as
+  UTF-8 (`StreamReader`, UTF-16/32 detected by byte order mark; ANSI detection: step 25; binary files
+  are read like text until step 25). Unreadable file → `Problems`. Progress at most every 100 ms and
+  once at the end. Cancel → result so far with `Cancelled = true`, no exception.
+- `ResultListHtml` (interim view until the CSS layout of step 18): `FileList(result, background)`
+  (summary line, problems, `<ol>` of files with hit count), `MatchingLines(result, background)` (per
+  file its path, then `line number: text` with hits in `<mark>`), `Hint(text, background)`,
+  `Summary(result)`, `MarkHits(line)`. All text HTML encoded; at most `MaxLines` (5000) lines, because
+  `NavigateToString` takes only about 2 MB. The background colour comes from the App (no WinForms in Core).
+
 ### Other
 - `AppInfo`: product name, main window title (`grepWinUi 1.2.3`).
 - `MenuText.Display`: adds the `*` to menu items without a function.
+- `FocusOrder`: tab order helpers (main inputs first).
 
 ## 5. App
 
@@ -208,7 +232,12 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   dialog's values. Window title `[n] ` + `SearchQueryText.Title(Query)`.
 - `ViewOptionsBar.Bind(view)`: shows the values and writes every change back into `view`
   (a `_loading` flag stops write-back while loading). Pre/post maximum = keep values.
-- Shows `DummyResultHtml` for now.
+- `InitPanesAsync()` (on `Load`, kept as `_panesReady`): starts both WebView2 panes with the shared
+  environment and shows a hint ("No search yet …"); a missing WebView2 runtime → message box.
+- `RunSearchAsync()`: cancels a running search of this form, shows "Searching …", awaits
+  `SearchEngine.RunAsync(Query, …)` and shows `ResultListHtml.FileList` / `MatchingLines`. Never throws
+  (an unexpected error is shown in the pane); a newer search wins; closing the form cancels the search.
+  Called by `MainForm.ShowSearchProperties` after Start search (fire and forget).
 - **Keys in the WebView2 panes:** the WinForms WebView2 control only raises its own `KeyDown` for
   shortcut keys and doesn't pass them to the window, so the main menu never sees them (Ctrl+F would
   open the browser's find bar). `OnPaneKeyDown` looks the key up with `MainMenu.FindShortcut`
@@ -237,8 +266,10 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   `FocusOrder.FirstThenRest(inputs in layout order, [search string, file names, folder name])`,
   only visible and enabled inputs (`FocusOrder` in Core, tested). The three combo boxes sit in
   different sections, so normal `TabIndex` values can't give this order.
-- Cancel (Esc) discards; Exit and Start search (Enter) keep the values (Start search also sets
-  `StartSearchRequested`; searching itself is missing, so it keeps its `*`). `...` has no function yet.
+- Cancel (Esc) discards; Exit and Start search (Enter) keep the values; Start search also sets
+  `StartSearchRequested` and the main window then starts the search. `...` has no function yet.
+- Working parameters (no strike-through): the three section titles (search string, file names,
+  folder name) and "Include subfolders"; all others are still `NoEffect`.
 - **`NoEffect(...)`**: parameter names without effect are struck through; remove it in the step
   that makes the parameter work.
 
@@ -269,6 +300,10 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   options replace the older entry.
 - **`[+]`**: search string section always open; file names and folder sections open when one of
   their options differs from its default (as in the old program).
+- **Search engine** (step 17): runs on a background thread (old program: UI thread, window froze);
+  a file matching several patterns is searched once (old: once per pattern); inaccessible folders
+  and unreadable files are noted and skipped (old: exception / message box); empty search string →
+  no search (old: matched every line); files read as UTF-8 (old: ANSI code page).
 
 ## 7. Still to build (from the old program description)
 

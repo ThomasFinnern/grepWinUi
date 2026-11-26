@@ -1,5 +1,6 @@
 using GrepWinUi.Core.AppData.Config;
 using GrepWinUi.Core.AppData.Search;
+using GrepWinUi.Core.Search;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
@@ -16,6 +17,8 @@ internal sealed class ResultForm : Form
     private readonly Task<CoreWebView2Environment> _webViewEnvironment;
     private readonly ViewOptionsBar _optionsBar = new();
     private readonly int _number;
+    private Task<bool> _panesReady = Task.FromResult(false);
+    private CancellationTokenSource? _search;
 
     /// <summary>Creates a result form.</summary>
     /// <param name="query">Own search query of this form.</param>
@@ -47,7 +50,7 @@ internal sealed class ResultForm : Form
 
         _fileListPane.KeyDown += OnPaneKeyDown;
         _matchingLinesPane.KeyDown += OnPaneKeyDown;
-        Load += async (_, _) => await ShowDummyContentAsync();
+        Load += (_, _) => _panesReady = InitPanesAsync();
     }
 
     /// <summary>
@@ -91,20 +94,86 @@ internal sealed class ResultForm : Form
     /// <summary>Result pane; background like the form (no white flash before the page is shown).</summary>
     private static WebView2 Pane() => new() { Dock = DockStyle.Fill, DefaultBackgroundColor = SystemColors.Control };
 
-    private async Task ShowDummyContentAsync()
+    /// <summary>
+    /// Runs the search of <see cref="Query"/> in the background and shows the result as plain lists.
+    /// A running search of this form is cancelled first. Never throws (problems are shown in the panes).
+    /// </summary>
+    public async Task RunSearchAsync()
+    {
+        _search?.Cancel();
+        using CancellationTokenSource search = new();
+        _search = search;
+        await ShowPagesAsync(
+            ResultListHtml.Hint($"Searching '{Query.SearchString}' in '{Query.FolderName}' …", Background),
+            ResultListHtml.Hint("", Background));
+
+        string fileList;
+        string matchingLines;
+        try
+        {
+            SearchResult result = await SearchEngine.RunAsync(Query, progress: null, search.Token);
+            fileList = ResultListHtml.FileList(result, Background);
+            matchingLines = ResultListHtml.MatchingLines(result, Background);
+        }
+        catch (Exception ex)
+        {
+            // Unexpected error in the background search: show it instead of losing it.
+            fileList = ResultListHtml.Hint("Search failed: " + ex.Message, Background);
+            matchingLines = ResultListHtml.Hint("", Background);
+        }
+
+        if (_search == search)
+        {
+            _search = null;
+            await ShowPagesAsync(fileList, matchingLines);
+        }
+    }
+
+    /// <summary>Stops a running search of this form when it is closed.</summary>
+    protected override void OnFormClosed(FormClosedEventArgs e)
+    {
+        _search?.Cancel();
+        base.OnFormClosed(e);
+    }
+
+    /// <summary>Form background color as HTML color (e.g. #F0F0F0), so the panes look like the window.</summary>
+    private static string Background
+    {
+        get
+        {
+            Color color = SystemColors.Control;
+            return $"#{color.R:X2}{color.G:X2}{color.B:X2}";
+        }
+    }
+
+    /// <summary>Starts both WebView2 panes and shows a hint until the first search.</summary>
+    private async Task<bool> InitPanesAsync()
     {
         try
         {
             CoreWebView2Environment environment = await _webViewEnvironment;
             await _fileListPane.EnsureCoreWebView2Async(environment);
             await _matchingLinesPane.EnsureCoreWebView2Async(environment);
-            _fileListPane.NavigateToString(DummyResultHtml.FileList);
-            _matchingLinesPane.NavigateToString(DummyResultHtml.MatchingLines);
+            _fileListPane.NavigateToString(ResultListHtml.Hint("No search yet: Search → Search (Ctrl+F), then Start search.", Background));
+            _matchingLinesPane.NavigateToString(ResultListHtml.Hint("", Background));
+            return true;
         }
         catch (Exception ex) when (ex is WebView2RuntimeNotFoundException or InvalidOperationException or System.Runtime.InteropServices.COMException)
         {
             MessageBox.Show(this, "The result view needs the Microsoft Edge WebView2 Runtime.\n\n" + ex.Message,
                 Text, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return false;
         }
+    }
+
+    /// <summary>Shows both pages once the panes are ready (nothing when WebView2 is missing or the form is closed).</summary>
+    private async Task ShowPagesAsync(string fileList, string matchingLines)
+    {
+        if (!await _panesReady || IsDisposed)
+        {
+            return;
+        }
+        _fileListPane.NavigateToString(fileList);
+        _matchingLinesPane.NavigateToString(matchingLines);
     }
 }

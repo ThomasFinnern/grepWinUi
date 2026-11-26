@@ -226,7 +226,7 @@ public sealed class MainForm : Form
     /// <summary>
     /// Search properties dialog, modal over <paramref name="form"/>, filled with its query and line counts.
     /// Exit / Start search: the form takes over the edited values, the lists remember them and are saved
-    /// (Start search also remembers the whole query). Cancel changes nothing.
+    /// (Start search also remembers the whole query and starts the search). Cancel changes nothing.
     /// </summary>
     private void ShowSearchProperties(ResultForm form)
     {
@@ -245,6 +245,12 @@ public sealed class MainForm : Form
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             MessageBox.Show(this, ex.Message, "Search lists not saved", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+
+        if (dialog.StartSearchRequested)
+        {
+            // Runs in the background; RunSearchAsync shows its own problems and never throws.
+            _ = form.RunSearchAsync();
         }
     }
 
