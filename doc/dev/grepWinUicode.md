@@ -38,7 +38,7 @@ No admin rights needed: nothing is written next to the exe.
 | `AppConfig` | `Config.json` (Defaults file: `src/GrepWinUi.App/Defaults/Config.json`, a test keeps it equal to the built-in defaults) |
 | `LastUsedFiles` | `LastUsed.json` |
 | `SearchStringList` | `SearchStrings.json` (`Items` = used, `Fixed` = fixed tokens) |
-| `FileNamesList` | `FileNames.json` |
+| `FileNamesList` | `FileNames.json` (`Items` = used, `Fixed` = fixed tokens) |
 | `FolderNameList` | `FolderNames.json` |
 | `SearchQueryList` | `SearchQueries.json` |
 | `SearchQuery` (File → Save search query) | any `*.json` the user picks; header `Kind` = "grepWinUi search query", `Version` = 1, then `Query` |
@@ -77,7 +77,7 @@ No admin rights needed: nothing is written next to the exe.
     `ShowLastResultOnStart`.
   - While searching: `ShowFileNamesWhileSearching`, `ShowProgressInPercent`.
   - `ResultView` (`ResultViewOptions`).
-  - Token lists: `SearchStringTokens` (`TokenListOptions`); file names and folders follow in steps 16b/16c.
+  - Token lists: `SearchStringTokens`, `FileNameTokens` (`TokenListOptions`); folders follow in step 16c.
   - `Copy()` (JSON round trip).
 - `TokenListOptions` (record): start values (first start of the exe) `PreFixedCount` 7,
   `FirstFixedCount` 3, `MaxCount` 30, `MaxFixedCount` 15 (old program: 7 / 10 / 25 / 15). Old config files without the
@@ -111,7 +111,8 @@ No admin rights needed: nothing is written next to the exe.
   - `Copy()`: independent copy (JSON round trip).
 - `SearchQueryComparer`: **same search = same search string, file names and folder name.**
   Options are not compared. Search string with case, file/folder names ignore case.
-- Recent lists: `SearchStringList` (30 used + 15 fixed from the settings, case matters), `FileNamesList` (35, ignore case),
+- Recent lists: `SearchStringList` (30 used + 15 fixed from the settings, case matters),
+  `FileNamesList` (30 used + 15 fixed from the settings, ignore case),
   `FolderNameList` (40, ignore case), `SearchQueryList` (15, `SearchQueryComparer`).
   Max counts as in the old program.
 - `SearchLists`: the four lists together. `Load(store, out problems)` (never throws),
@@ -120,8 +121,8 @@ No admin rights needed: nothing is written next to the exe.
   lists; with `asPastQuery` also a copy of the whole query), `StartQuery(config)` (copy of the newest
   past query, else `SearchQuery.CreateDefault`).
   `ApplySettings(config)`: list limits from the settings (at start and after Settings → Save).
-  `SearchStringTokens(config)`: merged search string dropdown items.
-- `SearchStringList` is a `PinnedRecentList<string>` (search string tokens).
+  `SearchStringTokens(config)` / `FileNameTokens(config)`: merged dropdown items.
+- `SearchStringList` and `FileNamesList` are `PinnedRecentList<string>` (search string / file name tokens).
 - `SearchQueryText`: `Title(query)` ("search :: files :: folder", folder over 32 characters →
   "..." + last 30), `DropDownItems(current, items, comparer)` (current value first, no duplicates),
   `HasFileNameOptions` / `HasFolderOptions` (an option differs from its default → `[+]` starts open).
@@ -162,9 +163,10 @@ with the search properties dialog.
 - `EditSearch()` (Search → Search, Ctrl+F): dialog over the active result form; without one → `NewSearch()`.
 - `OpenSettings()` (Options → Settings): `SettingsForm` on a copy; saves on OK, then
   `lists.ApplySettings(Config)`.
-- `EditSearchStringTokens()` (Options → Search string token): `TokenListForm` with
-  `SearchStrings.EditRows(pre, first)` and `Config.SearchStringTokens`; Exit → settings into
-  `Config.json`, `ApplySettings`, `ReplaceAll(rows)`, save the lists.
+- `EditSearchStringTokens()` (Options → Search string token) and `EditFileNameTokens()`
+  (Options → File name token) both call `EditTokenList(title, list, comparer, getOptions, setOptions)`:
+  `TokenListForm` with `list.EditRows(pre, first)` and the list's `TokenListOptions`; Exit → settings
+  into `Config.json`, `ApplySettings`, `ReplaceAll(rows)`, save the lists.
 - Windows menu arranges the MDI children; File → Exit closes.
 
 ### MainMenu
@@ -179,19 +181,21 @@ See "UI spec: status bar" in CLAUDE.md.
 
 ### Options/SettingsForm
 Page list on the left (`OptionsPage` subclasses): Search result view, While searching, On start of
-program, Search string token. Works on `AppConfig.Copy()`; `Result` is set on Save.
+program, Search string token, File name token. Works on `AppConfig.Copy()`; `Result` is set on Save.
 - `TokenListPage(title, select)`: the four `TokenListOptions` numbers of one list; reused for the
   file name and folder name token pages.
 
 ### Options/TokenListForm (token list dialog)
-- `TokenListForm(title, rows, comparer, options)`: `CheckedListBox` (ticked = fixed), always in
-  dropdown order: after every change (tick, Add, Move, Delete, pre/first fixed count) the rows are
-  arranged again with `PinnedRecentList.Arrange`. "New entry" + **Add** (newest used; an existing
-  equal entry is only selected), **Move up** / **Move down** (swap with the next row of the same
-  group), **Delete selected**. Bottom right: group "List settings" with the four `TokenListOptions`
-  numbers. **Exit** sets `Rows` and `Options`, **Cancel** (Esc) discards.
-  Reused for file name and folder name tokens.
-- `MainForm.EditSearchStringTokens()`: on Exit the options go into `Config.SearchStringTokens`
+- `TokenListForm(title, rows, comparer, options)`: two `ListBox`es, **Standard entries** (used,
+  newest first) on top and **Pre entries** (fixed) below, each about half the height. Only one entry
+  is selected at a time (selecting in one list clears the other). **To pre ↓** / **To standard ↑**
+  move the selected entry to the top of the other list; "New entry" + **Add** puts it on top of the
+  standard entries (an existing equal entry is only selected). **Move up** / **Move down** /
+  **Delete selected** work on the selected list. Bottom right: group "List settings" with the four
+  `TokenListOptions` numbers. **Exit** sets `Rows` (standard rows, then pre rows, each in list order)
+  and `Options`; **Cancel** (Esc) discards. Reused for file name and folder name tokens.
+- Wording in the UI: "standard entries" = used items (`Items`), "pre entries" = fixed items (`Fixed`).
+- `MainForm.EditTokenList(...)`: on Exit the options go into the list's section of the config
   (`Config.json` saved, same values as the Settings page), then `ApplySettings`, `ReplaceAll(rows)`,
   lists saved.
 

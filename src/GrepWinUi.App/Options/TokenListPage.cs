@@ -24,19 +24,19 @@ internal sealed class TokenListPage : OptionsPage
         _select = select;
 
         TableLayoutPanel table = new() { AutoSize = true, ColumnCount = 2 };
-        AddRow(table, "Newest used items shown first", _preFixed);
-        AddRow(table, "Then fixed items", _firstFixed);
-        AddRow(table, "Max used items", _maxCount);
-        AddRow(table, "Max fixed items", _maxFixed);
+        AddRow(table, "Newest used shown first", _preFixed);
+        AddRow(table, "Then pre entries", _firstFixed);
+        AddRow(table, "Max standard", _maxCount);
+        AddRow(table, "Max pre", _maxFixed);
 
         Label help = new()
         {
             AutoSize = true,
             MaximumSize = new Size(380, 0),
             Margin = new Padding(3, 12, 3, 3),
-            Text = "Dropdown order: the newest used items, then the fixed items, then the other used "
-                + "items, then the other fixed items. Fixed items are ticked in the Options menu list "
-                + "and never move when an entry is used.",
+            Text = "Dropdown order: the newest standard entries, then the pre entries, then the other "
+                + "standard entries, then the other pre entries. Pre entries are fixed: they never move "
+                + "when an entry is used. Both lists are edited in the Options menu.",
         };
         Controls.Add(Column(table, help));
     }

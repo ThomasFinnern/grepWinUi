@@ -6,6 +6,7 @@ using GrepWinUi.Core.AppData.Config;
 using GrepWinUi.Core.AppData.Search;
 using GrepWinUi.Core.AppData.Session;
 using Microsoft.Web.WebView2.Core;
+using RecentLists;
 using SaveAndLoad;
 
 namespace GrepWinUi.App;
@@ -41,7 +42,7 @@ public sealed class MainForm : Form
 
         MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(
             OpenSettings, ExitApp, NewSearch, EditSearch, OpenSearchQuery, LoadSearchQuery, SaveSearchQuery,
-            EditSearchStringTokens, LayoutMdi));
+            EditSearchStringTokens, EditFileNameTokens, LayoutMdi));
         MainMenuStrip = menuStrip;
         Controls.Add(menuStrip);
         Controls.Add(new MainStatusBar());
@@ -263,18 +264,33 @@ public sealed class MainForm : Form
     private void ExitApp() => Close();
 
     /// <summary>Options → Settings: edit and save the settings.</summary>
+    /// <summary>Options → Search string token: edit the search string list and its settings.</summary>
+    private void EditSearchStringTokens() => EditTokenList(
+        "Search string token", _lists.SearchStrings, StringComparer.Ordinal,
+        config => config.SearchStringTokens, (config, options) => config.SearchStringTokens = options);
+
+    /// <summary>Options → File name token: edit the file names list and its settings.</summary>
+    private void EditFileNameTokens() => EditTokenList(
+        "File name token", _lists.FileNames, StringComparer.OrdinalIgnoreCase,
+        config => config.FileNameTokens, (config, options) => config.FileNameTokens = options);
+
     /// <summary>
-    /// Options → Search string token: edit the search string list (fixed entries ticked) and its four
-    /// list settings. Exit stores the settings in <c>Config.json</c> (same values as in Settings),
-    /// replaces the list and saves the lists; Cancel changes nothing.
+    /// Token list dialog: edit a list (fixed entries ticked) and its four list settings.
+    /// Exit stores the settings in <c>Config.json</c> (same values as in Settings), replaces the list
+    /// and saves the lists; Cancel changes nothing.
     /// </summary>
-    private void EditSearchStringTokens()
+    private void EditTokenList(
+        string title,
+        PinnedRecentList<string> list,
+        StringComparer comparer,
+        Func<AppConfig, TokenListOptions> getOptions,
+        Action<AppConfig, TokenListOptions> setOptions)
     {
-        TokenListOptions options = Config.SearchStringTokens;
+        TokenListOptions options = getOptions(Config);
         using TokenListForm dialog = new(
-            "Search string token",
-            _lists.SearchStrings.EditRows(options.PreFixedCount, options.FirstFixedCount),
-            StringComparer.Ordinal,
+            title,
+            list.EditRows(options.PreFixedCount, options.FirstFixedCount),
+            comparer,
             options);
         if (dialog.ShowDialog(this) != DialogResult.OK || dialog.Rows is null || dialog.Options is null)
         {
@@ -282,7 +298,7 @@ public sealed class MainForm : Form
         }
 
         AppConfig changed = Config.Copy();
-        changed.SearchStringTokens = dialog.Options;
+        setOptions(changed, dialog.Options);
         try
         {
             _store.Save(changed);
@@ -294,7 +310,7 @@ public sealed class MainForm : Form
         }
 
         _lists.ApplySettings(Config);
-        _lists.SearchStrings.ReplaceAll(dialog.Rows);
+        list.ReplaceAll(dialog.Rows);
         try
         {
             _lists.Save(_store);

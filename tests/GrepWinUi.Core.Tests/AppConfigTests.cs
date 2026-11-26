@@ -45,6 +45,13 @@ public sealed class AppConfigTests : IDisposable
     }
 
     [Fact]
+    public void NewConfig_FileNameTokens_SameStartValues()
+    {
+        Assert.Equal(new TokenListOptions(), new AppConfig().FileNameTokens);
+        Assert.NotSame(new AppConfig().SearchStringTokens, new AppConfig().FileNameTokens);
+    }
+
+    [Fact]
     public void OldConfigFileWithoutTokenSection_GetsDefaults()
     {
         AppConfig config = JsonSerializer.Deserialize<AppConfig>("{ \"ShowProgressInPercent\": true }")!;

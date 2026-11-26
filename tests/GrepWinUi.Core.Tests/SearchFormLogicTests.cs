@@ -137,6 +137,36 @@ public sealed class SearchFormLogicTests : IDisposable
     }
 
     [Fact]
+    public void ApplySettings_FileNameLimitsIndependentOfSearchStrings()
+    {
+        SearchLists lists = new();
+        AppConfig config = new();
+        config.FileNameTokens.MaxCount = 1;
+        config.SearchStringTokens.MaxCount = 5;
+
+        lists.ApplySettings(config);
+
+        Assert.Equal(1, lists.FileNames.MaxCount);
+        Assert.Equal(5, lists.SearchStrings.MaxCount);
+    }
+
+    [Fact]
+    public void FileNameTokens_MergedAsInSettings_FixedStayOnRemember()
+    {
+        SearchLists lists = new();
+        lists.FileNames.Fixed.AddRange(["*.cs", "*.md"]);
+        AppConfig config = new();
+        config.FileNameTokens.PreFixedCount = 1;
+        config.FileNameTokens.FirstFixedCount = 1;
+
+        lists.Remember(new SearchQuery { FileNames = "*.php" }, asPastQuery: false);
+        lists.Remember(new SearchQuery { FileNames = "*.MD" }, asPastQuery: false);
+
+        Assert.Equal(["*.cs", "*.md"], lists.FileNames.Fixed);
+        Assert.Equal(["*.MD", "*.cs", "*.php"], lists.FileNameTokens(config));
+    }
+
+    [Fact]
     public void Title_SearchStringFileNamesFolder()
     {
         SearchQuery query = new() { SearchString = "function", FileNames = "*controller.php", FolderName = @"e:\www\api" };

@@ -41,6 +41,9 @@ public sealed class AppConfig : IStorable
     /// <summary>Limits and dropdown order of the search string token list.</summary>
     public TokenListOptions SearchStringTokens { get; set; } = new();
 
+    /// <summary>Limits and dropdown order of the file name token list.</summary>
+    public TokenListOptions FileNameTokens { get; set; } = new();
+
     /// <summary>Independent deep copy (e.g. for editing in a dialog).</summary>
     public AppConfig Copy() =>
         JsonSerializer.Deserialize<AppConfig>(JsonSerializer.Serialize(this))!;

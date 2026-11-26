@@ -23,5 +23,11 @@
     "FirstFixedCount": 3,
     "MaxCount": 30,
     "MaxFixedCount": 15
+  },
+  "FileNameTokens": {
+    "PreFixedCount": 7,
+    "FirstFixedCount": 3,
+    "MaxCount": 30,
+    "MaxFixedCount": 15
   }
 }

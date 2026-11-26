@@ -4,40 +4,34 @@ using RecentLists;
 namespace GrepWinUi.App.Options;
 
 /// <summary>
-/// Dialog to edit a token list (Options → Search string token, …): one row per entry, ticked = fixed.
-/// The rows are always shown in dropdown order (newest used entries first, then the fixed ones, then
-/// the rest); they are arranged again after each change. The four list settings are shown bottom right
-/// and are the same values as in Settings. After Exit: <see cref="Rows"/> and <see cref="Options"/>.
+/// Dialog to edit a token list (Options → Search string token, …) in two lists:
+/// <b>Standard entries</b> (used ones, newest first) on top and <b>Pre entries</b> (fixed ones: kept
+/// and not moved when an entry is used) below. Buttons move the selected entry between the lists;
+/// new additions always go to the top of the target list. The four list settings are shown bottom
+/// right and are the same values as in Settings. After Exit: <see cref="Rows"/> and <see cref="Options"/>.
 /// </summary>
 internal sealed class TokenListForm : Form
 {
-    private readonly CheckedListBox _list = new()
-    {
-        Dock = DockStyle.Fill,
-        CheckOnClick = true,
-        IntegralHeight = false,
-        HorizontalScrollbar = true,
-    };
-
+    private readonly ListBox _standard = TokenList();
+    private readonly ListBox _pre = TokenList();
     private readonly TextBox _newEntry = new() { Anchor = AnchorStyles.Left | AnchorStyles.Right };
     private readonly NumericUpDown _preFixed = Number(0);
     private readonly NumericUpDown _firstFixed = Number(0);
     private readonly NumericUpDown _maxCount = Number(1);
     private readonly NumericUpDown _maxFixed = Number(0);
     private readonly StringComparer _comparer;
-    private bool _arranging;
 
     /// <summary>Creates the dialog.</summary>
     /// <param name="title">Window title, e.g. "Search string token".</param>
-    /// <param name="rows">Current entries.</param>
+    /// <param name="rows">Current entries (fixed = pre entries); each group keeps its order.</param>
     /// <param name="comparer">Decides if two entries are the same.</param>
     /// <param name="options">Current list settings (shown and edited in the dialog).</param>
     public TokenListForm(string title, IEnumerable<PinnedRow<string>> rows, StringComparer comparer, TokenListOptions options)
     {
         _comparer = comparer;
         Text = title;
-        Size = new Size(640, 500);
-        MinimumSize = new Size(520, 400);
+        Size = new Size(640, 560);
+        MinimumSize = new Size(520, 460);
         StartPosition = FormStartPosition.CenterParent;
         MinimizeBox = false;
         MaximizeBox = false;
@@ -47,24 +41,20 @@ internal sealed class TokenListForm : Form
         Set(_firstFixed, options.FirstFixedCount);
         Set(_maxCount, options.MaxCount);
         Set(_maxFixed, options.MaxFixedCount);
-        ShowRows(rows, selected: null);
-
-        // ItemCheck comes before the new state is set, so arrange afterwards; not while refilling the list.
-        _list.ItemCheck += (_, _) =>
+        foreach (PinnedRow<string> row in rows)
         {
-            if (!_arranging)
-            {
-                BeginInvoke(Rearrange);
-            }
-        };
-        _preFixed.ValueChanged += (_, _) => Rearrange();
-        _firstFixed.ValueChanged += (_, _) => Rearrange();
+            (row.IsFixed ? _pre : _standard).Items.Add(row.Item);
+        }
+
+        // Only one entry is selected at a time, so the buttons know which list they work on.
+        _standard.SelectedIndexChanged += (_, _) => ClearOtherSelection(_standard, _pre);
+        _pre.SelectedIndexChanged += (_, _) => ClearOtherSelection(_pre, _standard);
 
         Controls.Add(Body());
         Controls.Add(Buttons());
     }
 
-    /// <summary>Edited rows in list order after Exit, else null.</summary>
+    /// <summary>Edited rows after Exit (standard entries, then pre entries, each in list order), else null.</summary>
     public IReadOnlyList<PinnedRow<string>>? Rows { get; private set; }
 
     /// <summary>Edited list settings after Exit, else null.</summary>
@@ -73,10 +63,14 @@ internal sealed class TokenListForm : Form
     private Control Body()
     {
         Button add = SideButton("Add");
+        Button toPre = SideButton("To pre ↓");
+        Button toStandard = SideButton("To standard ↑");
         Button up = SideButton("Move up");
         Button down = SideButton("Move down");
         Button delete = SideButton("Delete selected");
         add.Click += (_, _) => AddEntry();
+        toPre.Click += (_, _) => MoveBetween(_standard, _pre);
+        toStandard.Click += (_, _) => MoveBetween(_pre, _standard);
         up.Click += (_, _) => MoveSelected(-1);
         down.Click += (_, _) => MoveSelected(+1);
         delete.Click += (_, _) => DeleteSelected();
@@ -97,13 +91,20 @@ internal sealed class TokenListForm : Form
         newRow.Controls.Add(_newEntry, 1, 0);
         newRow.Controls.Add(add, 2, 0);
 
-        Label caption = new()
-        {
-            Text = "Entries in dropdown order (ticked = fixed: kept and not moved when an entry is used)",
-            Dock = DockStyle.Top,
-            AutoSize = true,
-            Padding = new Padding(0, 4, 0, 4),
-        };
+        FlowLayoutPanel betweenLists = new() { Dock = DockStyle.Fill, AutoSize = true, WrapContents = false };
+        betweenLists.Controls.AddRange([toPre, toStandard]);
+
+        TableLayoutPanel lists = new() { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 5 };
+        lists.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        lists.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        lists.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        lists.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        lists.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+        lists.Controls.Add(ListCaption("Standard entries (newest first, used ones move to the top)"), 0, 0);
+        lists.Controls.Add(_standard, 0, 1);
+        lists.Controls.Add(betweenLists, 0, 2);
+        lists.Controls.Add(ListCaption("Pre entries (fixed, never moved when used)"), 0, 3);
+        lists.Controls.Add(_pre, 0, 4);
 
         FlowLayoutPanel moveButtons = new()
         {
@@ -111,6 +112,7 @@ internal sealed class TokenListForm : Form
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
             AutoSize = true,
+            Padding = new Padding(0, 20, 0, 0),
         };
         moveButtons.Controls.AddRange([up, down, delete]);
 
@@ -119,9 +121,8 @@ internal sealed class TokenListForm : Form
         side.Controls.Add(moveButtons);
 
         Panel body = new() { Dock = DockStyle.Fill, Padding = new Padding(10) };
-        body.Controls.Add(_list);
+        body.Controls.Add(lists);
         body.Controls.Add(side);
-        body.Controls.Add(caption);
         body.Controls.Add(newRow);
         return body;
     }
@@ -131,9 +132,9 @@ internal sealed class TokenListForm : Form
     {
         TableLayoutPanel table = new() { Dock = DockStyle.Fill, ColumnCount = 2 };
         AddRow(table, "Newest used shown first", _preFixed);
-        AddRow(table, "Then fixed", _firstFixed);
-        AddRow(table, "Max used", _maxCount);
-        AddRow(table, "Max fixed", _maxFixed);
+        AddRow(table, "Then pre entries", _firstFixed);
+        AddRow(table, "Max standard", _maxCount);
+        AddRow(table, "Max pre", _maxFixed);
 
         GroupBox box = new() { Text = "List settings", Dock = DockStyle.Bottom, Height = 150 };
         box.Controls.Add(table);
@@ -146,7 +147,11 @@ internal sealed class TokenListForm : Form
         Button exit = new() { Text = "Exit", AutoSize = true };
         exit.Click += (_, _) =>
         {
-            Rows = CurrentRows();
+            Rows =
+            [
+                .. _standard.Items.Cast<string>().Select(item => new PinnedRow<string>(item, IsFixed: false)),
+                .. _pre.Items.Cast<string>().Select(item => new PinnedRow<string>(item, IsFixed: true)),
+            ];
             Options = new TokenListOptions
             {
                 PreFixedCount = (int)_preFixed.Value,
@@ -169,40 +174,11 @@ internal sealed class TokenListForm : Form
         return buttons;
     }
 
-    private List<PinnedRow<string>> CurrentRows() =>
-        [.. _list.Items.Cast<string>().Select((item, index) => new PinnedRow<string>(item, _list.GetItemChecked(index)))];
+    /// <summary>The list with the selected entry, or null.</summary>
+    private ListBox? SelectedList() =>
+        _standard.SelectedIndex >= 0 ? _standard : _pre.SelectedIndex >= 0 ? _pre : null;
 
-    /// <summary>Puts the rows in dropdown order again; the selected entry stays selected.</summary>
-    private void Rearrange()
-    {
-        if (_arranging)
-        {
-            return;
-        }
-        string? selected = _list.SelectedItem as string;
-        IReadOnlyList<PinnedRow<string>> arranged = PinnedRecentList<string>.Arrange(
-            CurrentRows(), (int)_preFixed.Value, (int)_firstFixed.Value, _comparer);
-        ShowRows(arranged, selected);
-    }
-
-    private void ShowRows(IEnumerable<PinnedRow<string>> rows, string? selected)
-    {
-        _arranging = true;
-        _list.BeginUpdate();
-        _list.Items.Clear();
-        foreach (PinnedRow<string> row in rows)
-        {
-            _list.Items.Add(row.Item, row.IsFixed);
-        }
-        _list.EndUpdate();
-        _arranging = false;
-        if (selected is not null)
-        {
-            _list.SelectedIndex = _list.Items.IndexOf(selected);
-        }
-    }
-
-    /// <summary>Adds the new entry as newest used one; an existing equal entry is only selected.</summary>
+    /// <summary>Adds the new entry on top of the standard entries; an existing equal entry is only selected.</summary>
     private void AddEntry()
     {
         string entry = _newEntry.Text;
@@ -211,64 +187,89 @@ internal sealed class TokenListForm : Form
             return;
         }
 
-        string? existing = _list.Items.Cast<string>().FirstOrDefault(item => _comparer.Equals(item, entry));
-        if (existing is null)
+        if (!SelectExisting(_standard, entry) && !SelectExisting(_pre, entry))
         {
-            List<PinnedRow<string>> rows = CurrentRows();
-            rows.Insert(0, new PinnedRow<string>(entry, IsFixed: false));
-            ShowRows(rows, entry);
-            Rearrange();
-        }
-        else
-        {
-            _list.SelectedItem = existing;
+            _standard.Items.Insert(0, entry);
+            _standard.SelectedIndex = 0;
         }
         _newEntry.Clear();
     }
 
+    private bool SelectExisting(ListBox list, string entry)
+    {
+        int index = list.Items.Cast<string>().ToList().FindIndex(item => _comparer.Equals(item, entry));
+        if (index >= 0)
+        {
+            list.SelectedIndex = index;
+        }
+        return index >= 0;
+    }
+
+    /// <summary>Moves the selected entry of <paramref name="from"/> to the top of <paramref name="to"/>.</summary>
+    private static void MoveBetween(ListBox from, ListBox to)
+    {
+        if (from.SelectedItem is not string entry)
+        {
+            return;
+        }
+
+        from.Items.RemoveAt(from.SelectedIndex);
+        to.Items.Insert(0, entry);
+        to.SelectedIndex = 0;
+        to.Focus();
+    }
+
     private void DeleteSelected()
     {
-        int index = _list.SelectedIndex;
-        if (index < 0)
+        if (SelectedList() is not ListBox list)
         {
             return;
         }
 
-        _arranging = true;
-        _list.Items.RemoveAt(index);
-        _arranging = false;
-        Rearrange();
-        if (_list.Items.Count > 0)
+        int index = list.SelectedIndex;
+        list.Items.RemoveAt(index);
+        if (list.Items.Count > 0)
         {
-            _list.SelectedIndex = Math.Min(index, _list.Items.Count - 1);
+            list.SelectedIndex = Math.Min(index, list.Items.Count - 1);
         }
     }
 
-    /// <summary>Moves the selected entry; the dropdown order then keeps it within its group (used or fixed).</summary>
     private void MoveSelected(int step)
     {
-        List<PinnedRow<string>> rows = CurrentRows();
-        int index = _list.SelectedIndex;
-        if (index < 0)
+        if (SelectedList() is not ListBox list)
         {
             return;
         }
 
-        // Swap with the next row of the same group, so the move is visible after arranging.
+        int index = list.SelectedIndex;
         int target = index + step;
-        while (target >= 0 && target < rows.Count && rows[target].IsFixed != rows[index].IsFixed)
-        {
-            target += step;
-        }
-        if (target < 0 || target >= rows.Count)
+        if (target < 0 || target >= list.Items.Count)
         {
             return;
         }
 
-        (rows[index], rows[target]) = (rows[target], rows[index]);
-        ShowRows(rows, rows[target].Item);
-        Rearrange();
+        object item = list.Items[index];
+        list.Items.RemoveAt(index);
+        list.Items.Insert(target, item);
+        list.SelectedIndex = target;
     }
+
+    private static void ClearOtherSelection(ListBox selected, ListBox other)
+    {
+        if (selected.SelectedIndex >= 0)
+        {
+            other.ClearSelected();
+        }
+    }
+
+    private static ListBox TokenList() => new()
+    {
+        Dock = DockStyle.Fill,
+        IntegralHeight = false,
+        HorizontalScrollbar = true,
+    };
+
+    private static Label ListCaption(string text) => new() { Text = text, AutoSize = true, Padding = new Padding(0, 4, 0, 2) };
 
     private static NumericUpDown Number(int minimum) => new() { Minimum = minimum, Maximum = 999, Width = 60 };
 

@@ -60,14 +60,23 @@ public sealed class SearchLists
     /// <summary>Applies the list limits of the settings (at start and after the settings changed).</summary>
     public void ApplySettings(AppConfig config)
     {
-        TokenListOptions tokens = config.SearchStringTokens;
-        SearchStrings.MaxCount = Math.Max(1, tokens.MaxCount);
-        SearchStrings.MaxFixedCount = Math.Max(0, tokens.MaxFixedCount);
+        Apply(SearchStrings, config.SearchStringTokens);
+        Apply(FileNames, config.FileNameTokens);
     }
 
     /// <summary>Dropdown items of the search string: used and fixed tokens merged as set in the settings.</summary>
     public IReadOnlyList<string> SearchStringTokens(AppConfig config) =>
         SearchStrings.Merged(config.SearchStringTokens.PreFixedCount, config.SearchStringTokens.FirstFixedCount);
+
+    /// <summary>Dropdown items of the file names: used and fixed tokens merged as set in the settings.</summary>
+    public IReadOnlyList<string> FileNameTokens(AppConfig config) =>
+        FileNames.Merged(config.FileNameTokens.PreFixedCount, config.FileNameTokens.FirstFixedCount);
+
+    private static void Apply(RecentLists.PinnedRecentList<string> list, TokenListOptions options)
+    {
+        list.MaxCount = Math.Max(1, options.MaxCount);
+        list.MaxFixedCount = Math.Max(0, options.MaxFixedCount);
+    }
 
     /// <summary>Query for a new result form: a copy of the newest past query, else the defaults.</summary>
     public SearchQuery StartQuery(AppConfig config) =>

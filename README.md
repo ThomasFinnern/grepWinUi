@@ -52,17 +52,22 @@ redesign from start with the help of AI
   Parameter names that have no effect yet are struck through.
 - **Windows → Cascade / Tile horizontal / Tile vertical / Arrange Icons:** arranges the result windows.
 - **File → Exit:** closes the program.
-- **Options → Settings:** edit the settings on four pages (Search result view, While searching,
-  On start of program, Search string token). **Save** writes `Config.json`, **Cancel** discards all changes.
-  New result forms start with a copy of these settings.
-  The page **Search string token** sets the search string dropdown: how many newest used entries come
-  first, how many fixed entries follow, and how many used / fixed entries are kept.
-- **Options → Search string token:** edit the list of search strings of the dropdown. Ticked entries
-  are **fixed**: they are kept and don't move when a search string is used (used entries move to the
-  top and the oldest drop out). The list is always shown in dropdown order: the newest used entries
-  first, then the fixed ones, then the rest. **Add** a new entry, **Move up** / **Move down** (within
-  used or fixed entries), **Delete selected**. Bottom right: the four list settings, the same values
-  as on the Settings page. **Exit** saves list and settings, **Cancel** discards.
+- **Options → Settings:** edit the settings on five pages (Search result view, While searching,
+  On start of program, Search string token, File name token). **Save** writes `Config.json`, **Cancel**
+  discards all changes. New result forms start with a copy of these settings.
+  The pages **Search string token** and **File name token** set their dropdown: how many newest used
+  entries come first, how many fixed entries follow, and how many used / fixed entries are kept
+  (start values 7 / 3 / 30 / 15).
+- **Options → Search string token:** edit the search strings of the dropdown in two lists.
+  **Standard entries** (top): newest first; a used entry moves to the top, the oldest drop out.
+  **Pre entries** (below): fixed, they are kept and never move when a search string is used.
+  **To pre ↓** / **To standard ↑** move the selected entry to the top of the other list;
+  **Add** puts a new entry on top of the standard entries. **Move up** / **Move down**,
+  **Delete selected**. Bottom right: the four list settings, the same values as on the Settings page.
+  **Exit** saves lists and settings, **Cancel** discards.
+  The dropdown shows the newest standard entries first, then the pre entries, then the rest.
+- **Options → File name token:** the same for the file name patterns of the file names dropdown
+  (e.g. `*.cs *.md`); upper and lower case count as the same.
 
 ## Build and run
 
