@@ -176,6 +176,13 @@ No admin rights needed: nothing is written next to the exe.
     files searched in folder '…' (0.4 s)", plus " — cancelled").
   - All text HTML encoded; at most `MaxLines` (5000) lines, because `NavigateToString` takes only about 2 MB.
   - Size / date columns of the old file list are not there yet (the result model has no size/date).
+- `SearchStatus` (step 19): status bar texts of one result form, record `(Title, Info, Folder, Files,
+  Time, IsRunning)`. `Idle` (all empty), `Running(query, progress, elapsed, showFileNames)` ("Searching
+  '…'", current file as Info only if `showFileNames`, Folder = last name of the current file's folder or
+  of the search folder, Files "12 / ?"), `Done(result)` ("Search done" / "Search cancelled", Info
+  "154 matches in 48 files from 57 files searched", Files "57 / 57", cancelled "57 / ?"),
+  `Failed(query, message, elapsed)`. Helpers `LastFolderName(folder)` (`e:\a\api_6x\` → `api_6x`, a
+  drive root stays) and `TimeText(elapsed)` (`00:00:07`, hours beyond 24).
 
 ### Other
 - `AppInfo`: product name, main window title (`grepWinUi 1.2.3`).
@@ -228,8 +235,10 @@ with the search properties dialog.
 - Items without a handler get `*` automatically (`MenuText`).
 
 ### MainStatusBar
-Fields Title, Info, Working (progress bar), Folder, Files, Time — dummy texts for now.
-See "UI spec: status bar" in CLAUDE.md.
+Fields Title, Info, Working (progress bar), Folder, Files, Time (see "UI spec: status bar" in CLAUDE.md).
+`ShowStatus(SearchStatus)` writes "Title: …" etc.; Working is a marquee while `IsRunning`, else empty.
+`MainForm.UpdateStatusBar()` shows the status of the active result form (`SearchStatus.Idle` without
+one); called on `MdiChildActivate`, after a form is closed and on the active form's `StatusChanged`.
 
 ### Options/SettingsForm
 Page list on the left (`OptionsPage` subclasses): Search result view, While searching, On start of
@@ -263,11 +272,15 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   environment and shows a hint ("No search yet …"); a missing WebView2 runtime → message box.
 - `Result` (last finished or loaded result, null while searching) and `ResultChanged`;
   `ShowResultAsync(result)` shows a saved result without searching.
-- `RunSearchAsync()`: cancels a running search of this form, shows "Searching …", awaits
-  `SearchEngine.RunAsync(Query, …)` and shows `ResultPageHtml.FileList` / `MatchingLines` with the CSS
+- `RunSearchAsync(showFileNames)`: cancels a running search of this form, shows "Searching …", awaits
+  `SearchEngine.RunAsync(Query, progress, …)` and shows `ResultPageHtml.FileList` / `MatchingLines` with the CSS
   from `ResultCss.Load(cssFolders, …)` (`cssFolders` = `ObjectStore.Folders`, passed in by `MainForm`).
   Never throws (an unexpected error is shown in the pane); a newer search wins; closing the form cancels
   the search. Called by `MainForm.ShowSearchProperties` after Start search (fire and forget).
+- `Status` / `StatusChanged` (step 19): `SearchStatus` of this form. While searching it is updated on
+  each progress report (`Progress<T>` created on the UI thread, at most every 100 ms) and by a 250 ms
+  WinForms timer (time); at the end `SearchStatus.Done` / `Failed`; `ShowResultAsync` sets `Done(result)`.
+  `showFileNames` comes from Settings "Show file names in status bar" at search start.
 - `IsSearching` / `CancelSearch()` (step 18): Search → Cancel Search stops the running search; the engine
   returns what it found so far (`Cancelled = true`) and the panes show it, marked "cancelled".
   `ResultChanged` is raised at search start and end, so `MainForm.UpdateMenuState` enables
@@ -338,6 +351,10 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   a file matching several patterns is searched once (old: once per pattern); inaccessible folders
   and unreadable files are noted and skipped (old: exception / message box); empty search string →
   no search (old: matched every line); files read as UTF-8 (old: ANSI code page).
+- **Status bar** (step 19): one status bar in the main window showing the active result form's status
+  (old: one per result form). Folder = last name of the folder being read (old: folder count);
+  Files = read / all, "?" for all until files are counted first (step 20); Time = `hh:mm:ss`
+  (old: `s7.123` at the end only).
 
 ## 7. Still to build (from the old program description)
 

@@ -1,6 +1,7 @@
 using GrepWinUi.Core.AppData.Config;
 using GrepWinUi.Core.AppData.Search;
 using GrepWinUi.Core.Search;
+using System.Diagnostics;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 using SaveAndLoad;
@@ -22,6 +23,8 @@ internal sealed class ResultForm : Form
     private readonly StorageFolders _cssFolders;
     private Task<bool> _panesReady = Task.FromResult(false);
     private CancellationTokenSource? _search;
+    private readonly System.Windows.Forms.Timer _statusTimer = new() { Interval = 250 };
+    private Action? _updateRunningStatus;
 
     /// <summary>Creates a result form.</summary>
     /// <param name="query">Own search query of this form.</param>
@@ -57,6 +60,7 @@ internal sealed class ResultForm : Form
         _fileListPane.KeyDown += OnPaneKeyDown;
         _matchingLinesPane.KeyDown += OnPaneKeyDown;
         Load += (_, _) => _panesReady = InitPanesAsync();
+        _statusTimer.Tick += (_, _) => _updateRunningStatus?.Invoke();
     }
 
     /// <summary>
@@ -103,13 +107,34 @@ internal sealed class ResultForm : Form
     /// <summary>
     /// Runs the search of <see cref="Query"/> in the background and shows the result in both panes.
     /// A running search of this form is cancelled first. Never throws (problems are shown in the panes).
+    /// While it runs, <see cref="Status"/> is updated from the progress reports and every 250 ms (time).
     /// </summary>
-    public async Task RunSearchAsync()
+    /// <param name="showFileNames">Settings "Show file names in status bar": Info shows the file being read.</param>
+    public async Task RunSearchAsync(bool showFileNames)
     {
         _search?.Cancel();
         using CancellationTokenSource search = new();
         _search = search;
+        SearchQuery query = Query;
+        Stopwatch time = Stopwatch.StartNew();
+        SearchProgress? lastProgress = null;
+        void UpdateRunningStatus()
+        {
+            if (_search == search)
+            {
+                SetStatus(SearchStatus.Running(query, lastProgress, time.Elapsed, showFileNames));
+            }
+        }
+        // Created on the UI thread, so the reports arrive on the UI thread.
+        Progress<SearchProgress> progress = new(report =>
+        {
+            lastProgress = report;
+            UpdateRunningStatus();
+        });
+        _updateRunningStatus = UpdateRunningStatus;
+        _statusTimer.Start();
         SetResult(null);
+        UpdateRunningStatus();
         await ShowPagesAsync(
             HintPage(ResultCss.FileListFileName, $"Searching '{Query.SearchString}' in '{Query.FolderName}' …"),
             HintPage(ResultCss.MatchingLinesFileName, ""));
@@ -117,22 +142,27 @@ internal sealed class ResultForm : Form
         string fileList;
         string matchingLines;
         SearchResult? result = null;
+        SearchStatus endStatus;
         try
         {
-            result = await SearchEngine.RunAsync(Query, progress: null, search.Token);
+            result = await SearchEngine.RunAsync(query, progress, search.Token);
             fileList = FileListPage(result);
             matchingLines = MatchingLinesPage(result);
+            endStatus = SearchStatus.Done(result);
         }
         catch (Exception ex)
         {
             // Unexpected error in the background search: show it instead of losing it.
             fileList = HintPage(ResultCss.FileListFileName, "Search failed: " + ex.Message);
             matchingLines = HintPage(ResultCss.MatchingLinesFileName, "");
+            endStatus = SearchStatus.Failed(query, ex.Message, time.Elapsed);
         }
 
         if (_search == search)
         {
             _search = null;
+            StopStatusTimer();
+            SetStatus(endStatus);
             SetResult(result);
             await ShowPagesAsync(fileList, matchingLines);
         }
@@ -156,11 +186,34 @@ internal sealed class ResultForm : Form
     /// </summary>
     public event EventHandler? ResultChanged;
 
+    /// <summary>Status bar texts of this form (shown by the main window while this form is active).</summary>
+    public SearchStatus Status { get; private set; } = SearchStatus.Idle;
+
+    /// <summary>Raised when <see cref="Status"/> changes.</summary>
+    public event EventHandler? StatusChanged;
+
+    private void SetStatus(SearchStatus status)
+    {
+        if (status != Status)
+        {
+            Status = status;
+            StatusChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    private void StopStatusTimer()
+    {
+        _statusTimer.Stop();
+        _updateRunningStatus = null;
+    }
+
     /// <summary>Shows a saved result (File → Open search result) without searching; a running search is cancelled.</summary>
     public async Task ShowResultAsync(SearchResult result)
     {
         _search?.Cancel();
         _search = null;
+        StopStatusTimer();
+        SetStatus(SearchStatus.Done(result));
         SetResult(result);
         await ShowPagesAsync(FileListPage(result), MatchingLinesPage(result));
     }
@@ -175,6 +228,8 @@ internal sealed class ResultForm : Form
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         _search?.Cancel();
+        StopStatusTimer();
+        _statusTimer.Dispose();
         base.OnFormClosed(e);
     }
 

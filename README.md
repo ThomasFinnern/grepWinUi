@@ -11,7 +11,13 @@ redesign from start with the help of AI
 - **Main window:** an MDI window titled "grepWinUi" plus version, which will hold the search forms.
 - **Menu bar:** File, Search, View, Options, Tools, Windows, Help (Help on the right).
   Items marked with `*` have no function yet.
-- **Status bar:** Title, Info, Working (progress bar), Folder, Files, Time. Shows dummy texts for now.
+- **Status bar:** shows the search of the active result window. While searching: **Title**
+  "Searching '…'", **Info** the file being read (Options → Settings → While searching →
+  "Show file names in status bar"), **Working** a running animation, **Folder** the last name of the
+  folder being read (`e:\wamp64\www\api_6x` shows `api_6x`), **Files** files read / all files
+  (`12 / ?`: all files are not counted yet), **Time** counting up. After the search: "Search done" or
+  "Search cancelled", the number of matches, files and searched files, and the search time.
+  Switching to another result window shows its status.
 - **Settings:** stored per user in `%AppData%\GrepWinUi\Config.json` (no admin rights needed).
   Until you change a setting, the standard values from `Defaults\Config.json` next to the exe are used.
 - **File → New search query (Ctrl+N):** opens a new search result window inside the main window.

@@ -5,6 +5,7 @@ using GrepWinUi.Core;
 using GrepWinUi.Core.AppData.Config;
 using GrepWinUi.Core.AppData.Search;
 using GrepWinUi.Core.AppData.Session;
+using GrepWinUi.Core.Search;
 using Microsoft.Web.WebView2.Core;
 using RecentLists;
 using SaveAndLoad;
@@ -20,6 +21,7 @@ public sealed partial class MainForm : Form
     private readonly ToolStripItem _saveQueryItem;
     private readonly ToolStripItem _saveResultItem;
     private readonly ToolStripItem _cancelSearchItem;
+    private readonly MainStatusBar _statusBar = new();
     private Task<CoreWebView2Environment>? _webViewEnvironment;
     private int _resultFormCount;
 
@@ -48,13 +50,17 @@ public sealed partial class MainForm : Form
             EditSearchStringTokens, EditFileNameTokens, EditFolderNameTokens, LayoutMdi));
         MainMenuStrip = menuStrip;
         Controls.Add(menuStrip);
-        Controls.Add(new MainStatusBar());
+        Controls.Add(_statusBar);
 
         _saveQueryItem = menuStrip.Items.Find(MainMenu.SaveSearchQueryName, searchAllChildren: true).Single();
         _saveResultItem = menuStrip.Items.Find(MainMenu.SaveSearchResultName, searchAllChildren: true).Single();
         _cancelSearchItem = menuStrip.Items.Find(MainMenu.CancelSearchName, searchAllChildren: true).Single();
         UpdateMenuState();
-        MdiChildActivate += (_, _) => UpdateMenuState();
+        MdiChildActivate += (_, _) =>
+        {
+            UpdateMenuState();
+            UpdateStatusBar();
+        };
         Shown += (_, _) => OnFirstShown();
     }
 
@@ -65,6 +71,10 @@ public sealed partial class MainForm : Form
         _saveResultItem.Enabled = ActiveMdiChild is ResultForm { Result: not null };
         _cancelSearchItem.Enabled = ActiveMdiChild is ResultForm { IsSearching: true };
     }
+
+    /// <summary>Status bar shows the status of the active result form; without one all fields are empty.</summary>
+    private void UpdateStatusBar() =>
+        _statusBar.ShowStatus((ActiveMdiChild as ResultForm)?.Status ?? SearchStatus.Idle);
 
     /// <summary>Program start: without an open result form, a new empty one with its search properties dialog.</summary>
     private void OnFirstShown()
@@ -96,8 +106,19 @@ public sealed partial class MainForm : Form
             MdiParent = this,
             Icon = Icon,
         };
-        form.FormClosed += (_, _) => BeginInvoke(UpdateMenuState);
+        form.FormClosed += (_, _) => BeginInvoke(() =>
+        {
+            UpdateMenuState();
+            UpdateStatusBar();
+        });
         form.ResultChanged += (_, _) => UpdateMenuState();
+        form.StatusChanged += (_, _) =>
+        {
+            if (ActiveMdiChild == form)
+            {
+                UpdateStatusBar();
+            }
+        };
         form.Show();
         return form;
     }
@@ -273,7 +294,7 @@ public sealed partial class MainForm : Form
         if (dialog.StartSearchRequested)
         {
             // Runs in the background; RunSearchAsync shows its own problems and never throws.
-            _ = form.RunSearchAsync();
+            _ = form.RunSearchAsync(Config.ShowFileNamesWhileSearching);
         }
     }
 
@@ -292,7 +313,6 @@ public sealed partial class MainForm : Form
     /// <summary>File → Exit: closes the main window and ends the program.</summary>
     private void ExitApp() => Close();
 
-    /// <summary>Options → Settings: edit and save the settings.</summary>
     /// <summary>Options → Search string token: edit the search string list and its settings.</summary>
     private void EditSearchStringTokens() => EditTokenList(
         "Search string token", _lists.SearchStrings, StringComparer.Ordinal,
@@ -355,6 +375,7 @@ public sealed partial class MainForm : Form
         }
     }
 
+    /// <summary>Options → Settings: edit and save the settings.</summary>
     private void OpenSettings()
     {
         using SettingsForm dialog = new(Config);
