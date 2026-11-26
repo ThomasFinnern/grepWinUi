@@ -148,6 +148,17 @@ No admin rights needed: nothing is written next to the exe.
   all). Each file once (one pass per folder, all patterns checked; a `HashSet` across overlapping start
   folders), files of a folder before its subfolders, both sorted by name. Missing / unreadable folders →
   `Problems`, the search goes on. `FoldersSearched` counts. Returned paths are full paths.
+- `ResultMode` (step 24): `Of(query)` = FirstMatchOnly / NonMatchingLines / FilesWithoutMatch / FileNamesOnly;
+  `NoLines`, `CountOf(file)` (hits, or lines with NonMatchingLines; `SearchResult.MatchCount` is their sum),
+  `Counts(result)` ("12 matches in 3 files from 57 files searched", "… lines without match in …",
+  "… files without match from …", "… files with matches from …"; used by `ResultPageHtml.Summary` and
+  `SearchStatus.Done`). `SearchEngine.SearchFile(…, mode)`: found line = hit XOR NonMatchingLines (no hits
+  stored then); FirstMatchOnly keeps the first found line, later found lines inside its "after" range
+  become context lines, then stops reading (old program: stopped at once, no lines after);
+  FilesWithoutMatch / FileNamesOnly stop at the first found line and give a `FileResult` without lines
+  (FileNamesOnly like grep -l, user decision; FilesWithoutMatch wins when both are set).
+  `ResultPageHtml`: column "Matches" / "Lines" / none, `LinesTitleKind(query)` ("Lines with" / "Lines
+  without" / "Files without" / "Files with"), "Found no files / lines without match for …".
 - `FolderList.Split(text, folderExists)` (step 23): blanks separate, double quotes keep blanks (as the old
   `ExtractFolderListWithApostrophes`), duplicates (case ignored) dropped; a whole text with blanks that is
   an existing folder is one folder (old inputs without quotes keep working).
@@ -173,6 +184,9 @@ No admin rights needed: nothing is written next to the exe.
     `a|b`; old program: `\b…\b` without group), timeout `RegexTimeout` (2 s) per line. `Regex.Matches`
     moves on after a match of length 0 (`^$` gives a hit of length 0; old program looped forever).
   - `RegexError(pattern)`: problem text or null (used by the search dialog's Start search).
+  - Step 24, `wholeLine` ("Match whole line", user decision: blanks around the line ignored): plain =
+    `WholeLineMatcher` (trimmed line equals the text, hit = trimmed part); regex =
+    `(?<=^\s*)(?:pattern)(?=\s*$)`. Whole words is not used then.
   - Test `PlainText_SameHitsAsEscapedRegex` keeps both kinds consistent (`IsWordChar` is close to `\w`,
     not equal for marks / connector punctuation other than '_').
 - `SearchEngine.RunAsync(query, progress, cancel)`: `Task.Run` over `Run(...)` with a copy of the query.

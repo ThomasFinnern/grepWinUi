@@ -107,6 +107,29 @@ public sealed class LineMatcherTests
         Assert.Equal(regex, plain);
     }
 
+    [Theory]
+    [InlineData("foo", false, "  foo  ")]
+    [InlineData("foo", false, "FOO")]
+    [InlineData("foo", true, "FOO")]
+    [InlineData("foo", false, "foo bar")]
+    [InlineData("a.b", false, "	a.b ")]
+    [InlineData("a.b", false, "axb")]
+    public void WholeLine_PlainSameHitsAsEscapedRegex(string text, bool matchCase, string line)
+    {
+        IReadOnlyList<Hit> plain = LineMatcher.PlainText(text, matchCase, wholeLine: true).Find(line);
+        IReadOnlyList<Hit> regex = LineMatcher.RegularExpression(Regex.Escape(text), matchCase, wholeLine: true).Find(line);
+
+        Assert.Equal(regex, plain);
+    }
+
+    [Fact]
+    public void WholeLine_HitIsLineWithoutBlanksAround()
+    {
+        Assert.Equal([new Hit(2, 3)], LineMatcher.PlainText("foo", wholeLine: true).Find("  foo "));
+        Assert.Empty(LineMatcher.PlainText("foo", wholeLine: true).Find("foo bar"));
+        Assert.Equal([new Hit(1, 6)], LineMatcher.RegularExpression("a|abcdef", wholeLine: true).Find(" abcdef"));
+    }
+
     [Fact]
     public void Create_UsesQueryOptions()
     {

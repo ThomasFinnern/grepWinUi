@@ -63,7 +63,7 @@ public sealed record SearchStatus(
         string all = result.Cancelled ? UnknownCount : result.FilesSearched.ToString();
         return new SearchStatus(
             result.Cancelled ? "Search cancelled" : "Search done",
-            $"{result.MatchCount} matches in {result.Files.Count} files from {result.FilesSearched} files searched",
+            ResultMode.Counts(result),
             LastFolderName(result.Query.FolderName),
             $"{result.FilesSearched} / {all}",
             TimeText(result.Duration),

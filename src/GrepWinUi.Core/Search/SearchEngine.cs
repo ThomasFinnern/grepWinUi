@@ -61,6 +61,7 @@ public static class SearchEngine
         {
             return new SearchResult(query, [], 0, 0, 0, time.Elapsed, Cancelled: false, [$"Invalid regular expression: {ex.Message}"]);
         }
+        ResultMode mode = ResultMode.Of(query);
         int? totalFiles = null;
         if (query.CountFilesFirst)
         {
@@ -82,11 +83,11 @@ public static class SearchEngine
                 progress?.Report(new SearchProgress(filesSearched, finder.FoldersSearched, files.Count, path, totalFiles));
             }
 
-            FileResult? file = SearchFile(path, matcher, problems, cancel, keep);
+            FileResult? file = SearchFile(path, matcher, problems, cancel, keep, mode);
             if (file is not null)
             {
                 files.Add(file);
-                matchCount += file.Lines.Sum(line => line.Hits.Count);
+                matchCount += mode.CountOf(file);
             }
             if (cancel.IsCancellationRequested)
             {
@@ -130,16 +131,22 @@ public static class SearchEngine
     /// Matching lines of one file, or null when it has none. Read as UTF-8; UTF-16 / UTF-32 files are
     /// detected by their byte order mark. An unreadable file, or one where the regular expression takes
     /// too long for a line (<see cref="LineMatcher.RegexTimeout"/>), is noted in <paramref name="problems"/>
-    /// and gives null. Keeps up to <paramref name="keep"/> lines before / after each matching line:
-    /// the last lines before wait in a small queue and are only stored when a match follows.
+    /// and gives null. Keeps up to <paramref name="keep"/> lines before / after each found line:
+    /// the last lines before wait in a small queue and are only stored when a found line follows.
+    /// <paramref name="mode"/>: a found line is a line with a hit, or without one ("Non matching lines",
+    /// no hits then). "First match per file only" keeps the first found line, reads on only for its lines
+    /// after, then stops. "List files without match" gives a file without lines only when nothing was found;
+    /// "File names only" one without lines when something was found; both stop at the first found line.
     /// </summary>
     public static FileResult? SearchFile(
-        string path, LineMatcher matcher, List<string> problems, CancellationToken cancel, KeepLines keep = default)
+        string path, LineMatcher matcher, List<string> problems, CancellationToken cancel,
+        KeepLines keep = default, ResultMode mode = default)
     {
         List<LineMatch> lines = [];
         List<ContextLine> context = [];
         Queue<ContextLine> waiting = new();
         int afterLeft = 0;
+        bool foundAny = false;
         try
         {
             using StreamReader reader = new(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
@@ -148,9 +155,16 @@ public static class SearchEngine
             {
                 lineNumber++;
                 IReadOnlyList<Hit> hits = matcher.Find(line);
-                if (hits.Count > 0)
+                bool found = (hits.Count > 0) != mode.NonMatchingLines;
+                bool takeLine = found && !(mode.FirstMatchOnly && lines.Count > 0);
+                if (found && mode.NoLines)
                 {
-                    lines.Add(new LineMatch(lineNumber, line, hits));
+                    foundAny = true;
+                    break;
+                }
+                if (takeLine)
+                {
+                    lines.Add(new LineMatch(lineNumber, line, mode.NonMatchingLines ? [] : hits));
                     context.AddRange(waiting);
                     waiting.Clear();
                     afterLeft = keep.After;
@@ -168,7 +182,7 @@ public static class SearchEngine
                         waiting.Dequeue();
                     }
                 }
-                if (cancel.IsCancellationRequested)
+                if (cancel.IsCancellationRequested || (mode.FirstMatchOnly && lines.Count > 0 && afterLeft == 0))
                 {
                     break;
                 }
@@ -183,6 +197,14 @@ public static class SearchEngine
         {
             problems.Add($"Regular expression too slow, file skipped: '{path}'");
             return null;
+        }
+        if (mode.FilesWithoutMatch)
+        {
+            return foundAny ? null : new FileResult(path, []);
+        }
+        if (mode.FileNamesOnly)
+        {
+            return foundAny ? new FileResult(path, []) : null;
         }
         return lines.Count > 0 ? new FileResult(path, lines, context) : null;
     }

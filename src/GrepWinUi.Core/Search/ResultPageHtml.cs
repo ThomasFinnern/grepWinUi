@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using GrepWinUi.Core.AppData.Config;
+using GrepWinUi.Core.AppData.Search;
 
 namespace GrepWinUi.Core.Search;
 
@@ -21,7 +22,7 @@ public static class ResultPageHtml
 
     /// <summary>
     /// File list pane: header (searched string, <see cref="Summary"/>), problems, then a table
-    /// File name / Folder / Matches, or "Found no matches".
+    /// File name / Folder / Matches (Lines with "Non matching lines", none without lines), or "Found no …".
     /// </summary>
     public static string FileList(SearchResult result, string css, string background)
     {
@@ -40,15 +41,17 @@ public static class ResultPageHtml
             return Page(css, background, body.ToString());
         }
 
-        body.Append("<table><tr><th class=\"FileName\">File name</th><th class=\"Folder\">Folder</th>"
-            + "<th class=\"Matches\">Matches</th></tr>");
+        ResultMode mode = ResultMode.Of(result.Query);
+        string? countTitle = mode.NoLines ? null : mode.NonMatchingLines ? "Lines" : "Matches";
+        body.Append("<table><tr><th class=\"FileName\">File name</th><th class=\"Folder\">Folder</th>")
+            .Append(countTitle is null ? "" : $"<th class=\"Matches\">{countTitle}</th>").Append("</tr>");
         foreach (FileResult file in result.Files)
         {
-            int hits = file.Lines.Sum(line => line.Hits.Count);
             string name = Encode(Path.GetFileName(file.Path));
             body.Append("<tr><td class=\"FileName\"><div title=\"").Append(name).Append("\">").Append(name)
                 .Append("</div></td><td class=\"Folder\">").Append(Encode(Path.GetDirectoryName(file.Path) ?? ""))
-                .Append("</td><td class=\"Matches\">").Append(hits).Append("</td></tr>");
+                .Append("</td>")
+                .Append(countTitle is null ? "" : $"<td class=\"Matches\">{mode.CountOf(file)}</td>").Append("</tr>");
         }
         body.Append("</table>");
         return Page(css, background, body.ToString());
@@ -65,7 +68,7 @@ public static class ResultPageHtml
     public static string MatchingLines(SearchResult result, ResultViewOptions view, string css, string background)
     {
         StringBuilder body = new();
-        body.Append("<div class=\"HeaderFoundToken\"><h1>Lines with '")
+        body.Append("<div class=\"HeaderFoundToken\"><h1>").Append(LinesTitleKind(result.Query)).Append(" '")
             .Append(Encode(result.Query.SearchString)).Append("'</h1></div>");
         if (result.Files.Count == 0)
         {
@@ -163,19 +166,36 @@ public static class ResultPageHtml
     }
 
     /// <summary>
-    /// E.g. "In files '*.cs': found 12 matches in 3 files from 57 files searched in folder 'c:\src' (0.4 s)";
-    /// " — cancelled" at the end when the search was stopped.
+    /// E.g. "In files '*.cs': found 12 matches in 3 files from 57 files searched in folder 'c:\src' (0.4 s)"
+    /// (counts per result mode: <see cref="ResultMode.Counts"/>); " — cancelled" at the end when the search was stopped.
     /// </summary>
     public static string Summary(SearchResult result)
     {
-        string text = $"In files '{result.Query.FileNames}': found {result.MatchCount} matches in {result.Files.Count} files "
-            + $"from {result.FilesSearched} files searched in folder '{result.Query.FolderName}' ({result.Duration.TotalSeconds:0.0} s)";
+        string text = $"In files '{result.Query.FileNames}': found {ResultMode.Counts(result)} "
+            + $"in folder '{result.Query.FolderName}' ({result.Duration.TotalSeconds:0.0} s)";
         return result.Cancelled ? text + " — cancelled" : text;
     }
 
-    private static string NotFound(SearchResult result) =>
-        $"<p class=\"NotFound\">Found no matches for '{Encode(result.Query.SearchString)}'"
-        + (result.Cancelled ? " (search cancelled)" : "") + "</p>";
+    /// <summary>
+    /// Start of the matching lines pane header (the search string follows in quotes): "Lines with",
+    /// "Lines without", "Files without" or "Files with".
+    /// </summary>
+    public static string LinesTitleKind(SearchQuery query)
+    {
+        ResultMode mode = ResultMode.Of(query);
+        return mode.FilesWithoutMatch ? "Files without" : mode.FileNamesOnly ? "Files with"
+            : mode.NonMatchingLines ? "Lines without" : "Lines with";
+    }
+
+    private static string NotFound(SearchResult result)
+    {
+        ResultMode mode = ResultMode.Of(result.Query);
+        string what = mode.FilesWithoutMatch ? "Found no files without match for"
+            : mode.NonMatchingLines ? "Found no lines without match for"
+            : "Found no matches for";
+        return $"<p class=\"NotFound\">{what} '{Encode(result.Query.SearchString)}'"
+            + (result.Cancelled ? " (search cancelled)" : "") + "</p>";
+    }
 
     private static string Encode(string text) => WebUtility.HtmlEncode(text);
 

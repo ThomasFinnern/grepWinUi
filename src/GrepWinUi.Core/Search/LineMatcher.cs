@@ -6,7 +6,9 @@ namespace GrepWinUi.Core.Search;
 /// <summary>
 /// Finds the hits of the search string in a line. Two kinds: plain text (<c>IndexOf</c>, the default)
 /// and regular expression (only with "Regular expression"). Both know "Match case" (else upper / lower
-/// case is ignored) and "Whole words only" (no letter, digit or '_' directly before or after a hit).
+/// case is ignored), "Whole words only" (no letter, digit or '_' directly before or after a hit) and
+/// "Match whole line" (the search string covers the whole line except leading / trailing blanks; the hit
+/// is the line without them; whole words is then not needed).
 /// </summary>
 public abstract class LineMatcher
 {
@@ -16,15 +18,15 @@ public abstract class LineMatcher
     /// <summary>Matcher for the search string options of <paramref name="query"/>.</summary>
     /// <exception cref="ArgumentException">The search string is empty or not a valid regular expression.</exception>
     public static LineMatcher Create(SearchQuery query) => query.RegularExpression
-        ? RegularExpression(query.SearchString, query.MatchCase, query.WholeWordsOnly)
-        : PlainText(query.SearchString, query.MatchCase, query.WholeWordsOnly);
+        ? RegularExpression(query.SearchString, query.MatchCase, query.WholeWordsOnly, query.MatchWholeLine)
+        : PlainText(query.SearchString, query.MatchCase, query.WholeWordsOnly, query.MatchWholeLine);
 
     /// <summary>Plain text search: special characters like '.' or '*' are normal characters.</summary>
     /// <exception cref="ArgumentException">The text is empty.</exception>
-    public static LineMatcher PlainText(string text, bool matchCase = false, bool wholeWords = false)
+    public static LineMatcher PlainText(string text, bool matchCase = false, bool wholeWords = false, bool wholeLine = false)
     {
         ArgumentException.ThrowIfNullOrEmpty(text);
-        return new PlainTextMatcher(text, matchCase, wholeWords);
+        return wholeLine ? new WholeLineMatcher(text, matchCase) : new PlainTextMatcher(text, matchCase, wholeWords);
     }
 
     /// <summary>
@@ -32,10 +34,12 @@ public abstract class LineMatcher
     /// (e.g. <c>^$</c> for empty lines) is a hit of length 0. Each line may take at most <see cref="RegexTimeout"/>.
     /// </summary>
     /// <exception cref="ArgumentException">The pattern is empty or not valid.</exception>
-    public static LineMatcher RegularExpression(string pattern, bool matchCase = false, bool wholeWords = false)
+    public static LineMatcher RegularExpression(string pattern, bool matchCase = false, bool wholeWords = false, bool wholeLine = false)
     {
         ArgumentException.ThrowIfNullOrEmpty(pattern);
-        string full = wholeWords ? $@"(?<!\w)(?:{pattern})(?!\w)" : pattern;
+        string full = wholeLine ? $@"(?<=^\s*)(?:{pattern})(?=\s*$)"
+            : wholeWords ? $@"(?<!\w)(?:{pattern})(?!\w)"
+            : pattern;
         RegexOptions options = RegexOptions.CultureInvariant | (matchCase ? RegexOptions.None : RegexOptions.IgnoreCase);
         return new RegexMatcher(new Regex(full, options, RegexTimeout));
     }
@@ -94,6 +98,22 @@ public abstract class LineMatcher
         private static bool IsWholeWord(string line, int index, int length) =>
             (index == 0 || !IsWordChar(line[index - 1]))
             && (index + length == line.Length || !IsWordChar(line[index + length]));
+    }
+
+    private sealed class WholeLineMatcher(string text, bool matchCase) : LineMatcher
+    {
+        private readonly StringComparison _comparison = matchCase ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+
+        public override IReadOnlyList<Hit> Find(string line)
+        {
+            ReadOnlySpan<char> trimmed = line.AsSpan().Trim();
+            if (!trimmed.Equals(text, _comparison))
+            {
+                return [];
+            }
+            int start = line.Length - line.AsSpan().TrimStart().Length;
+            return [new Hit(start, trimmed.Length)];
+        }
     }
 
     private sealed class RegexMatcher(Regex regex) : LineMatcher

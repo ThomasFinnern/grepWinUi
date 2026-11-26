@@ -80,6 +80,17 @@ redesign from start with the help of AI
     `(public|private) function` or `^$` for empty lines. Without it, characters like `.` `*` `(` are
     searched as they are. Start search checks the expression first and shows what is wrong; a line
     that takes the expression longer than 2 s skips its file (listed as a problem).
+  - **Match whole line:** the search string must cover the whole line; blanks at the start and end of
+    the line don't count (an indented `    return x;` matches `return x;`).
+- **Result modes** (search properties dialog, Search string section):
+  - **First match per file only:** each file shows only its first matching line (plus its lines after).
+  - **List files without match:** lists only the files that do **not** contain the search string.
+  - **Non matching lines:** shows the lines that do **not** contain the search string; the file list
+    then counts lines ("Lines" column).
+  - **File names only (no lines):** lists the files with a match, without lines (fast: each file is
+    read only up to its first match).
+  - The file list header and the status bar say what was found, e.g. "12 files without match from 57
+    files searched".
 - **Result colours and fonts (CSS):** each pane has its own style sheet, `FileList.css` and
   `MatchingLines.css`. The standard files are in `Defaults\` next to the exe; to change the look,
   copy one to `%AppData%\GrepWinUi\` and edit it there. Your copy is used from the next search on.
