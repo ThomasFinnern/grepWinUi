@@ -57,7 +57,8 @@ public sealed class FileFilter
 
     /// <summary>
     /// Problems that stop "Start search" in the search dialog: invalid RegEx inputs
-    /// (<see cref="RegexProblems"/>) and "Skip binary files" together with "Only binary files".
+    /// (<see cref="RegexProblems"/>), "Skip binary files" together with "Only binary files", and
+    /// "Modified between" with the start day after the end day.
     /// </summary>
     public static IReadOnlyList<string> StartProblems(SearchQuery query)
     {
@@ -65,6 +66,10 @@ public sealed class FileFilter
         if (query.SkipBinaryFiles && query.OnlyBinaryFiles)
         {
             problems.Add("\"Skip binary files\" and \"Only binary files\" together search no file.");
+        }
+        if (FileDateFilter.Problem(query) is string dateProblem)
+        {
+            problems.Add(dateProblem);
         }
         return problems;
     }

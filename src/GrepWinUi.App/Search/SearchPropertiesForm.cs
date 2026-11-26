@@ -44,15 +44,15 @@ internal sealed class SearchPropertiesForm : Form
     private readonly CheckBox _delimited = NoEffect(Check("Delimited field"));
     private readonly TextBox _delimiter = new() { Width = 30, MaxLength = 1 };
     private readonly NumericUpDown _delimitedField = Number(999);
-    private readonly CheckBox _useDateTime = NoEffect(Check("Filter by file date"));
-    private readonly CheckBox _notOlderThan = NoEffect(Check("Modified within last"));
+    private readonly CheckBox _useDateTime = Check("Filter by file date");
+    private readonly CheckBox _notOlderThan = Check("Modified within last");
     private readonly NumericUpDown _olderThanValue = Number(9999);
     private readonly ComboBox _olderThanUnit = new()
     {
         Width = 80,
         DropDownStyle = ComboBoxStyle.DropDownList,
     };
-    private readonly CheckBox _dateRange = NoEffect(Check("Modified between"));
+    private readonly CheckBox _dateRange = Check("Modified between");
     private readonly DateTimePicker _rangeStart = DatePicker();
     private readonly DateTimePicker _rangeEnd = DatePicker();
 

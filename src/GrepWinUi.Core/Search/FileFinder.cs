@@ -37,10 +37,14 @@ public sealed class FileFinder
         Find(new SearchQuery { FolderName = folder, FileNames = fileNames, IncludeSubfolders = includeSubfolders }, cancel);
 
     /// <summary>Files of the folders and filters of <paramref name="query"/>.</summary>
+    /// <param name="query">Folders and filters.</param>
+    /// <param name="cancel">Stops finding.</param>
+    /// <param name="now">Start of the search for "Modified within last"; null = now.</param>
     /// <exception cref="ArgumentException">A RegEx of the filters is not valid (thrown at once, not while iterating).</exception>
-    public IEnumerable<string> Find(SearchQuery query, CancellationToken cancel)
+    public IEnumerable<string> Find(SearchQuery query, CancellationToken cancel, DateTime? now = null)
     {
         FileFilter filter = FileFilter.Create(query);
+        FileDateFilter dates = FileDateFilter.Create(query, now ?? DateTime.Now);
         IReadOnlyList<string> folders = FolderList.Split(query.FolderName);
         if (folders.Count == 0)
         {
@@ -60,11 +64,12 @@ public sealed class FileFinder
                 _problems.Add($"Folder not found: '{folder}'");
             }
         }
-        return FindInAll(roots, filter, query.IncludeSubfolders, cancel);
+        return FindInAll(roots, filter, dates, query.IncludeSubfolders, cancel);
     }
 
     /// <summary>Files of all start folders; a file found from two overlapping start folders comes once.</summary>
-    private IEnumerable<string> FindInAll(List<string> roots, FileFilter filter, bool includeSubfolders, CancellationToken cancel)
+    private IEnumerable<string> FindInAll(
+        List<string> roots, FileFilter filter, FileDateFilter dates, bool includeSubfolders, CancellationToken cancel)
     {
         HashSet<string> found = new(StringComparer.OrdinalIgnoreCase);
         foreach (string root in roots)
@@ -72,6 +77,10 @@ public sealed class FileFinder
             string fullRoot = Path.GetFullPath(root);
             foreach (string file in FindIn(fullRoot, fullRoot, filter, includeSubfolders, cancel))
             {
+                if (dates.IsActive && !dates.Accepts(LastWriteTime(file)))
+                {
+                    continue;
+                }
                 if (found.Add(file))
                 {
                     yield return file;
@@ -119,6 +128,19 @@ public sealed class FileFinder
             {
                 yield return file;
             }
+        }
+    }
+
+    /// <summary>Last modified time of a file (local time); a file that can't be read gives <see cref="DateTime.MinValue"/>.</summary>
+    private static DateTime LastWriteTime(string file)
+    {
+        try
+        {
+            return File.GetLastWriteTime(file);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return DateTime.MinValue;
         }
     }
 

@@ -169,8 +169,14 @@ No admin rights needed: nothing is written next to the exe.
   chars before the first hit, hits outside dropped, others moved, `…` at cut ends; `Cut(string)` for kept
   lines (first 2000 chars). Keeps the pages below WebView2's ~2 MB `NavigateToString` limit. A huge line
   is still read into memory once by `ReadLine`.
-- `FileFilter.StartProblems(query)` (step 25): `RegexProblems` + both binary options set; used by the
-  dialog's Start search (message box "Search not started").
+- `FileFilter.StartProblems(query)` (step 25): `RegexProblems` + both binary options set + (step 26)
+  `FileDateFilter.Problem`; used by the dialog's Start search (message box "Search not started").
+- `FileDateFilter` (step 26, new: the old program had only the controls): `Create(query, now)` only with
+  `FilterByFileDate`; "Modified within last" → from `Subtract(now, N, unit)` (months / years as calendar
+  units, `MinValue` before year 1), "Modified between" → from start day 00:00 to before the day after the
+  end day; both → the later start and the end. `Accepts(modified)` on `File.GetLastWriteTime` (local time,
+  read only when `IsActive`, in `FileFinder.FindInAll`). `FileFinder.Find(query, cancel, now)`: `now` is the
+  search start (default `DateTime.Now`). `Problem(query)`: start day after end day.
 - `FolderList.Split(text, folderExists)` (step 23): blanks separate, double quotes keep blanks (as the old
   `ExtractFolderListWithApostrophes`), duplicates (case ignored) dropped; a whole text with blanks that is
   an existing folder is one folder (old inputs without quotes keep working).

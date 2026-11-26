@@ -82,6 +82,10 @@ redesign from start with the help of AI
     that takes the expression longer than 2 s skips its file (listed as a problem).
   - **Match whole line:** the search string must cover the whole line; blanks at the start and end of
     the line don't count (an indented `    return x;` matches `return x;`).
+- **Filter by file date** (search properties dialog, Search string section, 4th column): only files
+  whose last modified time fits are searched. **Modified within last** N seconds … years (counted from
+  the start of the search), **Modified between** two days (both days included); both ticked: both must
+  fit. Start search warns when the start day is after the end day.
 - **Text encodings:** each file is read with its own encoding, found from its first 8 KB: byte order
   mark (UTF-8, UTF-16, UTF-32), UTF-16 without byte order mark, UTF-8, else the ANSI code page of the PC
   (e.g. Windows-1252), so umlauts show right in all of them.
