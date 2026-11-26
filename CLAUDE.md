@@ -272,5 +272,5 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-In between (part of step 29): File → Save / Open search result (`*.result.json`: search parameters,
-file list, lines with hits). Then step 18: result layout basics with CSS files + cancel.
+Step 18: result layout basics with CSS files (`FileList.css`, `MatchingLines.css`) + Search → Cancel Search.
+(Done in between: File → Save / Open search result, `*.result.json`.)
