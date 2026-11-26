@@ -89,7 +89,7 @@ internal static class MainMenu
         Item("Settings", onClick: actions.OpenSettings),
         Item("Search string token", onClick: actions.EditSearchStringTokens),
         Item("File name token", onClick: actions.EditFileNameTokens),
-        Item("Search folder list"),
+        Item("Folder name token", onClick: actions.EditFolderNameTokens),
         Item("Command line search parameters"));
 
     private static ToolStripMenuItem CreateToolsMenu() => Menu("&Tools",
@@ -166,6 +166,7 @@ internal static class MainMenu
 /// <param name="SaveSearchQuery">File → Save search query: active form's query to a file.</param>
 /// <param name="EditSearchStringTokens">Options → Search string token: edit the search string list.</param>
 /// <param name="EditFileNameTokens">Options → File name token: edit the file names list.</param>
+/// <param name="EditFolderNameTokens">Options → Folder name token: edit the folder names list.</param>
 /// <param name="ArrangeWindows">Windows → Cascade / Tile / Arrange Icons.</param>
 internal sealed record MainMenuActions(
     Action OpenSettings,
@@ -177,4 +178,5 @@ internal sealed record MainMenuActions(
     Action SaveSearchQuery,
     Action EditSearchStringTokens,
     Action EditFileNameTokens,
+    Action EditFolderNameTokens,
     Action<MdiLayout> ArrangeWindows);

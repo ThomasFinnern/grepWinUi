@@ -167,7 +167,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–16b (with 13a, 13b) are done.
+One step = one session. Steps 1–16c (with 13a, 13b, 16b) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -217,9 +217,9 @@ One step = one session. Steps 1–16b (with 13a, 13b) are done.
        names list, own Settings page. Token dialog reworked for both lists: two lists
        "Standard entries" (used) on top and "Pre entries" (fixed) below, buttons "To pre ↓" /
        "To standard ↑" (new additions go to the top), no checkboxes
-1. [ ] 16c Options menu "Folder name token" (was "Search folder list"): same as 16 for the folder
-       names list, own Settings page
-1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
+1. [x] 16c Options menu "Folder name token" (was "Search folder list"): same as 16 for the folder
+       names list, own Settings page (start values 7 / 3 / 40 / 15)
+1. [ ] 17 Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
        (regex, whole word, match case, lines before/after); async, cancellable, progress
 1. [ ] Result form: two WebView2 panes; HTML/CSS built in Core: fill with search data, style like in old project with classes
 1. [ ] Connect search to results: start/cancel
@@ -244,6 +244,5 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 16c: Options menu "Folder name token" (was "Search folder list"): same as steps 16/16b for the
-folder names list (reuse `PinnedRecentList`, `TokenListPage`, `TokenListForm`, `MainForm.EditTokenList`),
-own Settings page.
+Step 17: Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
+(regex, whole word, match case, lines before/after); async, cancellable, progress.

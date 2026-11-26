@@ -44,6 +44,9 @@ public sealed class AppConfig : IStorable
     /// <summary>Limits and dropdown order of the file name token list.</summary>
     public TokenListOptions FileNameTokens { get; set; } = new();
 
+    /// <summary>Limits and dropdown order of the folder name token list (40 standard entries, as in the old program).</summary>
+    public TokenListOptions FolderNameTokens { get; set; } = new() { MaxCount = 40 };
+
     /// <summary>Independent deep copy (e.g. for editing in a dialog).</summary>
     public AppConfig Copy() =>
         JsonSerializer.Deserialize<AppConfig>(JsonSerializer.Serialize(this))!;

@@ -52,12 +52,12 @@ redesign from start with the help of AI
   Parameter names that have no effect yet are struck through.
 - **Windows → Cascade / Tile horizontal / Tile vertical / Arrange Icons:** arranges the result windows.
 - **File → Exit:** closes the program.
-- **Options → Settings:** edit the settings on five pages (Search result view, While searching,
-  On start of program, Search string token, File name token). **Save** writes `Config.json`, **Cancel**
-  discards all changes. New result forms start with a copy of these settings.
-  The pages **Search string token** and **File name token** set their dropdown: how many newest used
-  entries come first, how many fixed entries follow, and how many used / fixed entries are kept
-  (start values 7 / 3 / 30 / 15).
+- **Options → Settings:** edit the settings on six pages (Search result view, While searching,
+  On start of program, Search string token, File name token, Folder name token). **Save** writes
+  `Config.json`, **Cancel** discards all changes. New result forms start with a copy of these settings.
+  The three token pages set their dropdown: how many newest standard entries come first, how many
+  pre (fixed) entries follow, and how many standard / pre entries are kept
+  (start values 7 / 3 / 30 / 15, for folders 7 / 3 / 40 / 15).
 - **Options → Search string token:** edit the search strings of the dropdown in two lists.
   **Standard entries** (top): newest first; a used entry moves to the top, the oldest drop out.
   **Pre entries** (below): fixed, they are kept and never move when a search string is used.
@@ -68,6 +68,8 @@ redesign from start with the help of AI
   The dropdown shows the newest standard entries first, then the pre entries, then the rest.
 - **Options → File name token:** the same for the file name patterns of the file names dropdown
   (e.g. `*.cs *.md`); upper and lower case count as the same.
+- **Options → Folder name token:** the same for the folders of the folder name dropdown;
+  upper and lower case count as the same.
 
 ## Build and run
 

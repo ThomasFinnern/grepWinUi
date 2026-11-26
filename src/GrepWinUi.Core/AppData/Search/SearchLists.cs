@@ -62,6 +62,7 @@ public sealed class SearchLists
     {
         Apply(SearchStrings, config.SearchStringTokens);
         Apply(FileNames, config.FileNameTokens);
+        Apply(FolderNames, config.FolderNameTokens);
     }
 
     /// <summary>Dropdown items of the search string: used and fixed tokens merged as set in the settings.</summary>
@@ -71,6 +72,10 @@ public sealed class SearchLists
     /// <summary>Dropdown items of the file names: used and fixed tokens merged as set in the settings.</summary>
     public IReadOnlyList<string> FileNameTokens(AppConfig config) =>
         FileNames.Merged(config.FileNameTokens.PreFixedCount, config.FileNameTokens.FirstFixedCount);
+
+    /// <summary>Dropdown items of the folder name: used and fixed tokens merged as set in the settings.</summary>
+    public IReadOnlyList<string> FolderNameTokens(AppConfig config) =>
+        FolderNames.Merged(config.FolderNameTokens.PreFixedCount, config.FolderNameTokens.FirstFixedCount);
 
     private static void Apply(RecentLists.PinnedRecentList<string> list, TokenListOptions options)
     {

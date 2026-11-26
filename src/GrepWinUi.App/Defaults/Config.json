@@ -29,5 +29,11 @@
     "FirstFixedCount": 3,
     "MaxCount": 30,
     "MaxFixedCount": 15
+  },
+  "FolderNameTokens": {
+    "PreFixedCount": 7,
+    "FirstFixedCount": 3,
+    "MaxCount": 40,
+    "MaxFixedCount": 15
   }
 }

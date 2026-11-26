@@ -39,7 +39,7 @@ No admin rights needed: nothing is written next to the exe.
 | `LastUsedFiles` | `LastUsed.json` |
 | `SearchStringList` | `SearchStrings.json` (`Items` = used, `Fixed` = fixed tokens) |
 | `FileNamesList` | `FileNames.json` (`Items` = used, `Fixed` = fixed tokens) |
-| `FolderNameList` | `FolderNames.json` |
+| `FolderNameList` | `FolderNames.json` (`Items` = used, `Fixed` = fixed tokens) |
 | `SearchQueryList` | `SearchQueries.json` |
 | `SearchQuery` (File → Save search query) | any `*.json` the user picks; header `Kind` = "grepWinUi search query", `Version` = 1, then `Query` |
 
@@ -77,7 +77,8 @@ No admin rights needed: nothing is written next to the exe.
     `ShowLastResultOnStart`.
   - While searching: `ShowFileNamesWhileSearching`, `ShowProgressInPercent`.
   - `ResultView` (`ResultViewOptions`).
-  - Token lists: `SearchStringTokens`, `FileNameTokens` (`TokenListOptions`); folders follow in step 16c.
+  - Token lists: `SearchStringTokens`, `FileNameTokens`, `FolderNameTokens` (`TokenListOptions`;
+    folders with `MaxCount` 40 as in the old program).
   - `Copy()` (JSON round trip).
 - `TokenListOptions` (record): start values (first start of the exe) `PreFixedCount` 7,
   `FirstFixedCount` 3, `MaxCount` 30, `MaxFixedCount` 15 (old program: 7 / 10 / 25 / 15). Old config files without the
@@ -113,7 +114,7 @@ No admin rights needed: nothing is written next to the exe.
   Options are not compared. Search string with case, file/folder names ignore case.
 - Recent lists: `SearchStringList` (30 used + 15 fixed from the settings, case matters),
   `FileNamesList` (30 used + 15 fixed from the settings, ignore case),
-  `FolderNameList` (40, ignore case), `SearchQueryList` (15, `SearchQueryComparer`).
+  `FolderNameList` (40 used + 15 fixed from the settings, ignore case), `SearchQueryList` (15, `SearchQueryComparer`).
   Max counts as in the old program.
 - `SearchLists`: the four lists together. `Load(store, out problems)` (never throws),
   `Save(store)` (throws `IOException` / `UnauthorizedAccessException`),
@@ -121,8 +122,8 @@ No admin rights needed: nothing is written next to the exe.
   lists; with `asPastQuery` also a copy of the whole query), `StartQuery(config)` (copy of the newest
   past query, else `SearchQuery.CreateDefault`).
   `ApplySettings(config)`: list limits from the settings (at start and after Settings → Save).
-  `SearchStringTokens(config)` / `FileNameTokens(config)`: merged dropdown items.
-- `SearchStringList` and `FileNamesList` are `PinnedRecentList<string>` (search string / file name tokens).
+  `SearchStringTokens(config)` / `FileNameTokens(config)` / `FolderNameTokens(config)`: merged dropdown items.
+- `SearchStringList`, `FileNamesList` and `FolderNameList` are `PinnedRecentList<string>` (token lists).
 - `SearchQueryText`: `Title(query)` ("search :: files :: folder", folder over 32 characters →
   "..." + last 30), `DropDownItems(current, items, comparer)` (current value first, no duplicates),
   `HasFileNameOptions` / `HasFolderOptions` (an option differs from its default → `[+]` starts open).
@@ -163,8 +164,8 @@ with the search properties dialog.
 - `EditSearch()` (Search → Search, Ctrl+F): dialog over the active result form; without one → `NewSearch()`.
 - `OpenSettings()` (Options → Settings): `SettingsForm` on a copy; saves on OK, then
   `lists.ApplySettings(Config)`.
-- `EditSearchStringTokens()` (Options → Search string token) and `EditFileNameTokens()`
-  (Options → File name token) both call `EditTokenList(title, list, comparer, getOptions, setOptions)`:
+- `EditSearchStringTokens()`, `EditFileNameTokens()`, `EditFolderNameTokens()` (Options → Search string /
+  File name / Folder name token) all call `EditTokenList(title, list, comparer, getOptions, setOptions)`:
   `TokenListForm` with `list.EditRows(pre, first)` and the list's `TokenListOptions`; Exit → settings
   into `Config.json`, `ApplySettings`, `ReplaceAll(rows)`, save the lists.
 - Windows menu arranges the MDI children; File → Exit closes.
@@ -181,7 +182,8 @@ See "UI spec: status bar" in CLAUDE.md.
 
 ### Options/SettingsForm
 Page list on the left (`OptionsPage` subclasses): Search result view, While searching, On start of
-program, Search string token, File name token. Works on `AppConfig.Copy()`; `Result` is set on Save.
+program, Search string token, File name token, Folder name token. Works on `AppConfig.Copy()`;
+`Result` is set on Save.
 - `TokenListPage(title, select)`: the four `TokenListOptions` numbers of one list; reused for the
   file name and folder name token pages.
 

@@ -29,14 +29,17 @@ public sealed class FileNamesList : PinnedRecentList<string>, IStorable
     public FileNamesList() : base(maxCount: 30, maxFixedCount: 15, comparer: StringComparer.OrdinalIgnoreCase) { }
 }
 
-/// <summary>Last used folder names (dropdown of the folder name). Case is ignored, as in Windows.</summary>
-public sealed class FolderNameList : RecentList<string>, IStorable
+/// <summary>
+/// Folder name tokens: last used folder names plus fixed ones (dropdown of the folder name).
+/// Case is ignored, as in Windows. Limits come from <see cref="Config.AppConfig.FolderNameTokens"/>.
+/// </summary>
+public sealed class FolderNameList : PinnedRecentList<string>, IStorable
 {
     /// <inheritdoc/>
     public static string FileName => "FolderNames.json";
 
-    /// <summary>Empty list, up to 40 items.</summary>
-    public FolderNameList() : base(maxCount: 40, comparer: StringComparer.OrdinalIgnoreCase) { }
+    /// <summary>Empty list, up to 40 used and 15 fixed items until the settings are applied.</summary>
+    public FolderNameList() : base(maxCount: 40, maxFixedCount: 15, comparer: StringComparer.OrdinalIgnoreCase) { }
 }
 
 /// <summary>Last used complete search queries (File → Last used search queries).</summary>

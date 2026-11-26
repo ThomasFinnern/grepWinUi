@@ -52,12 +52,24 @@ public sealed class AppConfigTests : IDisposable
     }
 
     [Fact]
+    public void NewConfig_FolderNameTokens_40StandardEntries()
+    {
+        TokenListOptions folders = new AppConfig().FolderNameTokens;
+
+        Assert.Equal(7, folders.PreFixedCount);
+        Assert.Equal(3, folders.FirstFixedCount);
+        Assert.Equal(40, folders.MaxCount);
+        Assert.Equal(15, folders.MaxFixedCount);
+    }
+
+    [Fact]
     public void OldConfigFileWithoutTokenSection_GetsDefaults()
     {
         AppConfig config = JsonSerializer.Deserialize<AppConfig>("{ \"ShowProgressInPercent\": true }")!;
 
         Assert.True(config.ShowProgressInPercent);
         Assert.Equal(new TokenListOptions(), config.SearchStringTokens);
+        Assert.Equal(40, config.FolderNameTokens.MaxCount);
     }
 
     [Fact]

@@ -42,7 +42,7 @@ public sealed class MainForm : Form
 
         MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(
             OpenSettings, ExitApp, NewSearch, EditSearch, OpenSearchQuery, LoadSearchQuery, SaveSearchQuery,
-            EditSearchStringTokens, EditFileNameTokens, LayoutMdi));
+            EditSearchStringTokens, EditFileNameTokens, EditFolderNameTokens, LayoutMdi));
         MainMenuStrip = menuStrip;
         Controls.Add(menuStrip);
         Controls.Add(new MainStatusBar());
@@ -273,6 +273,11 @@ public sealed class MainForm : Form
     private void EditFileNameTokens() => EditTokenList(
         "File name token", _lists.FileNames, StringComparer.OrdinalIgnoreCase,
         config => config.FileNameTokens, (config, options) => config.FileNameTokens = options);
+
+    /// <summary>Options → Folder name token: edit the folder names list and its settings.</summary>
+    private void EditFolderNameTokens() => EditTokenList(
+        "Folder name token", _lists.FolderNames, StringComparer.OrdinalIgnoreCase,
+        config => config.FolderNameTokens, (config, options) => config.FolderNameTokens = options);
 
     /// <summary>
     /// Token list dialog: edit a list (fixed entries ticked) and its four list settings.

@@ -167,6 +167,26 @@ public sealed class SearchFormLogicTests : IDisposable
     }
 
     [Fact]
+    public void FolderNameTokens_LimitsAndMergeFromFolderSettings()
+    {
+        SearchLists lists = new();
+        lists.FolderNames.Fixed.AddRange([@"c:\fixed1", @"c:\fixed2"]);
+        AppConfig config = new();
+        config.FolderNameTokens.MaxCount = 2;
+        config.FolderNameTokens.PreFixedCount = 1;
+        config.FolderNameTokens.FirstFixedCount = 1;
+        lists.ApplySettings(config);
+
+        lists.Remember(new SearchQuery { FolderName = @"c:\a" }, asPastQuery: false);
+        lists.Remember(new SearchQuery { FolderName = @"c:\b" }, asPastQuery: false);
+        lists.Remember(new SearchQuery { FolderName = @"C:\B" }, asPastQuery: false);
+        lists.Remember(new SearchQuery { FolderName = @"c:\c" }, asPastQuery: false);
+
+        Assert.Equal([@"c:\c", @"C:\B"], lists.FolderNames.Items);
+        Assert.Equal([@"c:\c", @"c:\fixed1", @"C:\B", @"c:\fixed2"], lists.FolderNameTokens(config));
+    }
+
+    [Fact]
     public void Title_SearchStringFileNamesFolder()
     {
         SearchQuery query = new() { SearchString = "function", FileNames = "*controller.php", FolderName = @"e:\www\api" };

@@ -161,6 +161,7 @@ public sealed class SearchQueryTests : IDisposable
         Assert.Equal(30, new FileNamesList().MaxCount);
         Assert.Equal(15, new FileNamesList().MaxFixedCount);
         Assert.Equal(40, new FolderNameList().MaxCount);
+        Assert.Equal(15, new FolderNameList().MaxFixedCount);
         Assert.Equal(15, new SearchQueryList().MaxCount);
     }
 

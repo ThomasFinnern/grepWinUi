@@ -86,7 +86,7 @@ internal sealed class SearchPropertiesForm : Form
     /// <param name="query">Query of the result form.</param>
     /// <param name="view">View options of the result form (line counts).</param>
     /// <param name="lists">Recent lists for the dropdowns.</param>
-    /// <param name="config">Settings (order of the search string and file name tokens in the dropdowns).</param>
+    /// <param name="config">Settings (order of the search string, file name and folder name tokens in the dropdowns).</param>
     public SearchPropertiesForm(SearchQuery query, ResultViewOptions view, SearchLists lists, AppConfig config)
     {
         _query = query.Copy();
@@ -119,7 +119,7 @@ internal sealed class SearchPropertiesForm : Form
 
         FillDropDown(_searchString, _query.SearchString, lists.SearchStringTokens(config), StringComparer.Ordinal);
         FillDropDown(_fileSpec, _query.FileNames, lists.FileNameTokens(config), StringComparer.OrdinalIgnoreCase);
-        FillDropDown(_folders, _query.FolderName, lists.FolderNames.Items, StringComparer.OrdinalIgnoreCase);
+        FillDropDown(_folders, _query.FolderName, lists.FolderNameTokens(config), StringComparer.OrdinalIgnoreCase);
         LoadFrom(_query, _view);
 
         Size preferred = _content.GetPreferredSize(Size.Empty);
