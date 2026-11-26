@@ -44,12 +44,20 @@ redesign from start with the help of AI
   starts); at the very beginning in `%AppData%\GrepWinUi`. Search results will use the same folder.
 - **Search (basic version):** **Start search** searches the folder from "Folder name" (with its
   subfolders when "Include subfolders" is ticked) for files matching "File names" (wildcards like
-  `*.cs *.md`) and finds the search string as plain text, ignoring upper / lower case. The window
+  `*.cs *.md`) and finds the search string in their lines. The window
   stays usable while searching. The file list pane shows a blue header with the search string and a
   summary, then a table of the files (file name, folder, number of matches). The matching lines pane
   shows each file's path, then its lines (`000012: text`, hits in green). Problems (missing folder,
   unreadable file) are listed too. The other search options follow step by step (their names are
   still struck through).
+- **Search string options** (search properties dialog, Search string section):
+  - **Match case:** upper and lower case must match; without it case is ignored.
+  - **Whole words only:** a hit must not have a letter, digit or `_` directly before or after it
+    (also works for `.NET` or `C#`).
+  - **Regular expression:** the search string is a .NET regular expression, e.g.
+    `(public|private) function` or `^$` for empty lines. Without it, characters like `.` `*` `(` are
+    searched as they are. Start search checks the expression first and shows what is wrong; a line
+    that takes the expression longer than 2 s skips its file (listed as a problem).
 - **Result colours and fonts (CSS):** each pane has its own style sheet, `FileList.css` and
   `MatchingLines.css`. The standard files are in `Defaults\` next to the exe; to change the look,
   copy one to `%AppData%\GrepWinUi\` and edit it there. Your copy is used from the next search on.

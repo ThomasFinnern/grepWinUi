@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 using GrepWinUi.Core.AppData.Search;
 
 namespace GrepWinUi.Core.Search;
@@ -32,7 +33,15 @@ public static class SearchEngine
             return new SearchResult(query, [], 0, 0, 0, time.Elapsed, Cancelled: false, ["Search string is empty."]);
         }
 
-        LineMatcher matcher = LineMatcher.PlainText(query.SearchString);
+        LineMatcher matcher;
+        try
+        {
+            matcher = LineMatcher.Create(query);
+        }
+        catch (ArgumentException ex)
+        {
+            return new SearchResult(query, [], 0, 0, 0, time.Elapsed, Cancelled: false, [$"Invalid regular expression: {ex.Message}"]);
+        }
         FileFinder finder = new();
         List<FileResult> files = [];
         List<string> problems = [];
@@ -108,7 +117,9 @@ public static class SearchEngine
 
     /// <summary>
     /// Matching lines of one file, or null when it has none. Read as UTF-8; UTF-16 / UTF-32 files are
-    /// detected by their byte order mark. An unreadable file is noted in <paramref name="problems"/>.
+    /// detected by their byte order mark. An unreadable file, or one where the regular expression takes
+    /// too long for a line (<see cref="LineMatcher.RegexTimeout"/>), is noted in <paramref name="problems"/>
+    /// and gives null.
     /// </summary>
     public static FileResult? SearchFile(string path, LineMatcher matcher, List<string> problems, CancellationToken cancel)
     {
@@ -134,6 +145,11 @@ public static class SearchEngine
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             problems.Add($"File not readable: '{path}' ({ex.Message})");
+            return null;
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            problems.Add($"Regular expression too slow, file skipped: '{path}'");
             return null;
         }
         return lines.Count > 0 ? new FileResult(path, lines) : null;

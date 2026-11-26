@@ -73,12 +73,28 @@ public sealed class SearchEngineTests : IDisposable
     }
 
     [Fact]
-    public void LineMatcher_AllHitsIgnoringCase_NotOverlapping()
+    public void Run_InvalidRegex_ProblemNoSearch()
     {
-        LineMatcher matcher = LineMatcher.PlainText("aa");
+        SearchQuery query = Query("(function", "*.*");
+        query.RegularExpression = true;
 
-        Assert.Equal([new Hit(0, 2), new Hit(2, 2), new Hit(6, 2)], matcher.Find("aAaa  AA"));
-        Assert.Empty(matcher.Find("a"));
+        SearchResult result = SearchEngine.Run(query, null, CancellationToken.None);
+
+        Assert.Empty(result.Files);
+        Assert.Equal(0, result.FilesSearched);
+        Assert.StartsWith("Invalid regular expression:", Assert.Single(result.Problems));
+    }
+
+    [Fact]
+    public void Run_MatchCaseAndRegex_UsesOptions()
+    {
+        SearchQuery query = Query("FUNCTION", "*.*");
+        query.MatchCase = true;
+        Assert.Equal(["b.md"], SearchEngine.Run(query, null, CancellationToken.None).Files.Select(file => Relative(file.Path)));
+
+        query = Query(@"(public|private) function", "*.*");
+        query.RegularExpression = true;
+        Assert.Equal(["a.cs", @"sub\d.cs"], SearchEngine.Run(query, null, CancellationToken.None).Files.Select(file => Relative(file.Path)));
     }
 
     [Fact]

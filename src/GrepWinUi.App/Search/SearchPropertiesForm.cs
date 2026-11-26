@@ -1,6 +1,7 @@
 using GrepWinUi.Core;
 using GrepWinUi.Core.AppData.Config;
 using GrepWinUi.Core.AppData.Search;
+using GrepWinUi.Core.Search;
 using static GrepWinUi.App.Search.SearchFormControls;
 
 namespace GrepWinUi.App.Search;
@@ -28,9 +29,9 @@ internal sealed class SearchPropertiesForm : Form
 
     // --- Search string ---
     private readonly ComboBox _searchString = TextCombo();
-    private readonly CheckBox _wholeWordsOnly = NoEffect(Check("Whole words only"));
-    private readonly CheckBox _matchCase = NoEffect(Check("Match case"));
-    private readonly CheckBox _useRegex = NoEffect(Check("Regular expression"));
+    private readonly CheckBox _wholeWordsOnly = Check("Whole words only");
+    private readonly CheckBox _matchCase = Check("Match case");
+    private readonly CheckBox _useRegex = Check("Regular expression");
     private readonly CheckBox _stopAfterFirstMatch = NoEffect(Check("First match per file only"));
     private readonly CheckBox _filesWithNoMatch = NoEffect(Check("List files without match"));
     private readonly CheckBox _linesWithNoMatch = NoEffect(Check("Non matching lines"));
@@ -306,9 +307,19 @@ internal sealed class SearchPropertiesForm : Form
         }
     }
 
-    /// <summary>Exit and Start search: keep the edited values and close.</summary>
+    /// <summary>
+    /// Exit and Start search: keep the edited values and close. Start search with an invalid regular
+    /// expression shows the problem and keeps the dialog open.
+    /// </summary>
     private void Accept(bool startSearch)
     {
+        if (startSearch && _useRegex.Checked && LineMatcher.RegexError(_searchString.Text) is string error)
+        {
+            MessageBox.Show(this, error, "Invalid regular expression", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            _searchString.Focus();
+            return;
+        }
+
         SaveTo(_query, _view);
         StartSearchRequested = startSearch;
         DialogResult = DialogResult.OK;

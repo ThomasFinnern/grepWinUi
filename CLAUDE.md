@@ -169,7 +169,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–20 (with 13a, 13b, 16b, 16c) are done.
+One step = one session. Steps 1–21 (with 13a, 13b, 16b, 16c) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 2. [x] Install .NET SDK (11.0.100 installed)
 3. [x] Install VS Code "C#" extension
@@ -238,7 +238,7 @@ Second iteration: deepen step by step (each step removes the strike-through of t
 19. [x] Status bar Title, Info, Folder (last folder name), Files (read / all), Time (counting while
        a search runs); Working as marquee animation while a search runs
 20. [x] Status bar Working in %: "Count files first (progress in %)" counts the files before searching
-21. [ ] Search string options: Match case, Whole words only, Regular expression
+21. [x] Search string options: Match case, Whole words only, Regular expression
 22. [ ] Lines before / after a match: keep (prepared) and show; header pre/post lines change the
        view without searching again
 23. [ ] File and folder filters: Include subfolders, File names as RegEx, Skip by extension,
@@ -273,4 +273,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 21: search string options: Match case, Whole words only, Regular expression.
+Step 22: lines before / after a match: keep (prepared) and show; header pre/post lines change the view without searching again.

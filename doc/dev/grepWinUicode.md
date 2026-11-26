@@ -144,10 +144,21 @@ No admin rights needed: nothing is written next to the exe.
   case ignored, `*.*` = all, empty = all). Each file once (one pass per folder, all patterns checked),
   files of a folder before its subfolders, both sorted by name. Missing / unreadable folders →
   `Problems`, the search goes on. `FoldersSearched` counts.
-- `LineMatcher.PlainText(text)`: plain text, `StringComparison.OrdinalIgnoreCase`, all hits left to
-  right, not overlapping. (Match case / whole words / regex: step 21.)
+- `LineMatcher` (step 21): abstract, `Find(line)` = all hits left to right, not overlapping.
+  `Create(query)` picks one of two kinds (decided in step 21: regex only when asked for):
+  - `PlainText(text, matchCase, wholeWords)`: `IndexOf` with `Ordinal` / `OrdinalIgnoreCase`; whole
+    words = no `IsWordChar` (letter, digit, '_') directly before / after the hit (a rejected place
+    retries one character further).
+  - `RegularExpression(pattern, matchCase, wholeWords)`: `Regex` with `CultureInvariant`
+    (+ `IgnoreCase` without Match case), whole words = `(?<!\w)(?:pattern)(?!\w)` (works for `.NET`, `C#`,
+    `a|b`; old program: `\b…\b` without group), timeout `RegexTimeout` (2 s) per line. `Regex.Matches`
+    moves on after a match of length 0 (`^$` gives a hit of length 0; old program looped forever).
+  - `RegexError(pattern)`: problem text or null (used by the search dialog's Start search).
+  - Test `PlainText_SameHitsAsEscapedRegex` keeps both kinds consistent (`IsWordChar` is close to `\w`,
+    not equal for marks / connector punctuation other than '_').
 - `SearchEngine.RunAsync(query, progress, cancel)`: `Task.Run` over `Run(...)` with a copy of the query.
-  Empty search string → no search, problem "Search string is empty". Files are read line by line as
+  Empty search string → no search, problem "Search string is empty"; invalid regular expression →
+  no search, problem "Invalid regular expression: …"; a regex timeout skips the file (problem). Files are read line by line as
   UTF-8 (`StreamReader`, UTF-16/32 detected by byte order mark; ANSI detection: step 25; binary files
   are read like text until step 25). Unreadable file → `Problems`. Progress at most every 100 ms and
   once at the end. Cancel → result so far with `Cancelled = true`, no exception.
