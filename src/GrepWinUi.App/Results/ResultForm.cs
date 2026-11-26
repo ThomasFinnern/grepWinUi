@@ -45,7 +45,30 @@ internal sealed class ResultForm : Form
         Controls.Add(panes);
         Controls.Add(_optionsBar);
 
+        _fileListPane.KeyDown += OnPaneKeyDown;
+        _matchingLinesPane.KeyDown += OnPaneKeyDown;
         Load += async (_, _) => await ShowDummyContentAsync();
+    }
+
+    /// <summary>
+    /// Shortcut keys pressed inside a WebView2 pane don't reach the main menu by themselves
+    /// (the browser would e.g. open its own find bar on Ctrl+F). A key that belongs to a working
+    /// menu item makes this form the active one and runs the item; other keys stay with the pane.
+    /// </summary>
+    private void OnPaneKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (MdiParent?.MainMenuStrip is not MenuStrip menu || MainMenu.FindShortcut(menu, e.KeyData) is not ToolStripMenuItem item)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        // Run after the WebView2 key event has returned: the item may open a modal dialog.
+        BeginInvoke(() =>
+        {
+            Activate();
+            item.PerformClick();
+        });
     }
 
     /// <summary>Search query of this form.</summary>

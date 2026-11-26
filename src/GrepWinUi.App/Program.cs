@@ -1,6 +1,7 @@
 using GrepWinUi.Core;
 using GrepWinUi.Core.AppData.Config;
 using GrepWinUi.Core.AppData.Search;
+using GrepWinUi.Core.AppData.Session;
 using SaveAndLoad;
 
 namespace GrepWinUi.App;
@@ -27,6 +28,8 @@ internal static class Program
             MessageBox.Show(string.Join("\n\n", listProblems), AppInfo.ProductName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
-        Application.Run(new MainForm(config.Value, lists, store));
+        LastUsedFiles lastUsed = store.Load<LastUsedFiles>().Value;
+
+        Application.Run(new MainForm(config.Value, lists, lastUsed, store));
     }
 }

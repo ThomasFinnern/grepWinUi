@@ -167,7 +167,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–14 (with 13a, 13b) are done.
+One step = one session. Steps 1–15 (with 13a, 13b) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -194,12 +194,18 @@ One step = one session. Steps 1–14 (with 13a, 13b) are done.
        and writes the changes back to it; dropdowns filled from the lists; no search.
        Line counts: the dialog's show/keep values and the header line's pre/post lines edit the same
        `ViewOptions` of the result form (copied from the settings when the form is created).
-1. [ ] 15 File menu "Save search query" (Alt+S): write the active result form's query to a file
+1. [x] 15 File menu "Save search query" (Alt+S): write the active result form's query to a file
        (own JSON format). "Open search query" (Ctrl+O): load a query file; opening starts a new
        result (search) form with that query and its search properties dialog.
        New File menu item "Load search query" (below "Open search query"): load a query file and
-       replace the query of the active result form (without one, a new result form is created).
-       File dialogs start in the folder of the last used query file (`LastUsedFiles`).
+       replace the query of the active result form (without one, a new result form is created);
+       it opens the search properties dialog too. Files: `*.json` with a header; Save is greyed out
+       without an active result form.
+       File dialogs start in the folder of the last saved / opened / loaded file
+       (`LastUsedFiles.LastUsedFile`, kept between starts; at the beginning `%AppData%\GrepWinUi`),
+       the search results will use the same folder.
+       Also: Tab order in the search form (search string → file names → folder name first);
+       menu shortcuts (Ctrl+F, …) work inside the WebView2 panes.
 1. [ ] Options menu: "Search string lists", "Search files spec. list", "Search folder list"
        (edit the recent-first lists)
 1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
@@ -227,4 +233,5 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 15: File menu: save / open / load search query (open starts a new result form, load replaces the query of the active one).
+Step 16: Options menu "Search string lists", "Search files spec. list", "Search folder list"
+(edit the recent-first lists).

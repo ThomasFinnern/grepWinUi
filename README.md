@@ -22,13 +22,25 @@ redesign from start with the help of AI
   newest search from the list of past searches (or the standard values).
   The window title shows `[number] search string :: file names :: folder`.
   The header line's pre/post lines can't be more than the lines kept (set in the dialog).
+- **File → Open search query (Ctrl+O):** opens a saved search query file in a new result window,
+  together with its search properties dialog.
+- **File → Load search query:** loads a saved search query into the active result window
+  (replaces its search; the lines before/after stay) and opens the search properties dialog.
+  Without an active result window it works like Open.
+- **File → Save search query (Alt+S):** saves the search of the active result window to a file
+  (`*.json`). Greyed out while no result window is active.
+  The file dialogs start in the folder of the last saved, opened or loaded file (kept between program
+  starts); at the very beginning in `%AppData%\GrepWinUi`. Search results will use the same folder.
 - **Program start:** without an open result window, a new empty one opens together with its
   search properties dialog.
 - **Search → Search (Ctrl+F):** opens the **Search properties** dialog over the active result window
-  (without one, a new result window is created first). Three sections: Search string, File names,
+  (without one, a new result window is created first). Ctrl+F (and the other menu shortcuts) also
+  work while the cursor is inside one of the result panes; that window becomes the active one. Three sections: Search string, File names,
   Folder name, each with a text box with dropdown; `[+]` shows more options for the section
   (the search string options are shown from the start, in four columns). The dialog can be
   resized; the text boxes grow with its width, and opening a section makes the dialog taller.
+  **Tab** jumps from the search string to the file names and the folder name first, then through
+  the other inputs (Shift+Tab goes back).
   At the bottom: lines before / after a match to show and to keep (shown ≤ kept); they are the same
   values as the pre/post lines in the window's header line.
   The dialog shows the search of its result window; the dropdowns list the last used search strings,

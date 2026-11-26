@@ -5,6 +5,9 @@ namespace GrepWinUi.App;
 /// <summary>Builds the main menu bar (File, Search, View, Options, Tools, Windows, Help).</summary>
 internal static class MainMenu
 {
+    /// <summary>Name of File → Save search query (enabled only while a result form is active).</summary>
+    public const string SaveSearchQueryName = "saveSearchQuery";
+
     /// <summary>Creates the menu bar. Items without a handler in <paramref name="actions"/> are marked with "*".</summary>
     public static MenuStrip Create(MainMenuActions actions)
     {
@@ -40,8 +43,9 @@ internal static class MainMenu
 
     private static ToolStripMenuItem CreateFileMenu(MainMenuActions actions) => Menu("&File",
         Item("New search query", Keys.Control | Keys.N, actions.NewSearch),
-        Item("Open search query", Keys.Control | Keys.O),
-        Item("Save search query", Keys.Alt | Keys.S),
+        Item("Open search query", Keys.Control | Keys.O, actions.OpenSearchQuery),
+        Item("Load search query", onClick: actions.LoadSearchQuery),
+        Named(Item("Save search query", Keys.Alt | Keys.S, actions.SaveSearchQuery), SaveSearchQueryName),
         Item("Close search view"),
         Item("Close All searches"),
         Item("Close All but this search"),
@@ -115,6 +119,37 @@ internal static class MainMenu
         return item;
     }
 
+    /// <summary>
+    /// The enabled, implemented menu item with shortcut <paramref name="keys"/>, or null.
+    /// Used for keys the menu doesn't get by itself (e.g. pressed inside a WebView2 pane).
+    /// Items marked with "*" (no function yet) are skipped so their keys stay with the pane.
+    /// </summary>
+    public static ToolStripMenuItem? FindShortcut(MenuStrip menu, Keys keys) =>
+        keys == Keys.None ? null : FindShortcut(menu.Items, keys);
+
+    private static ToolStripMenuItem? FindShortcut(ToolStripItemCollection items, Keys keys)
+    {
+        foreach (ToolStripMenuItem item in items.OfType<ToolStripMenuItem>())
+        {
+            if (item.ShortcutKeys == keys && item.Enabled && !item.Text!.StartsWith(MenuText.NotImplementedMarker, StringComparison.Ordinal))
+            {
+                return item;
+            }
+            if (FindShortcut(item.DropDownItems, keys) is ToolStripMenuItem found)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>Sets the item's name so the main window can find it (e.g. to enable or disable it).</summary>
+    private static ToolStripMenuItem Named(ToolStripMenuItem item, string name)
+    {
+        item.Name = name;
+        return item;
+    }
+
     /// <summary>Disabled placeholder so an empty "last used" list still shows its submenu arrow.</summary>
     private static ToolStripMenuItem EmptyListItem() => new("(empty)") { Enabled = false };
 
@@ -126,5 +161,16 @@ internal static class MainMenu
 /// <param name="ExitApp">File → Exit.</param>
 /// <param name="NewSearch">File → New search query: opens a new result form and its search properties.</param>
 /// <param name="EditSearch">Search → Search: search properties of the active result form.</param>
+/// <param name="OpenSearchQuery">File → Open search query: query file in a new result form.</param>
+/// <param name="LoadSearchQuery">File → Load search query: query file replaces the active form's query.</param>
+/// <param name="SaveSearchQuery">File → Save search query: active form's query to a file.</param>
 /// <param name="ArrangeWindows">Windows → Cascade / Tile / Arrange Icons.</param>
-internal sealed record MainMenuActions(Action OpenSettings, Action ExitApp, Action NewSearch, Action EditSearch, Action<MdiLayout> ArrangeWindows);
+internal sealed record MainMenuActions(
+    Action OpenSettings,
+    Action ExitApp,
+    Action NewSearch,
+    Action EditSearch,
+    Action OpenSearchQuery,
+    Action LoadSearchQuery,
+    Action SaveSearchQuery,
+    Action<MdiLayout> ArrangeWindows);

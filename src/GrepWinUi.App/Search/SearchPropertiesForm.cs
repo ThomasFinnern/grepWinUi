@@ -1,3 +1,4 @@
+using GrepWinUi.Core;
 using GrepWinUi.Core.AppData.Config;
 using GrepWinUi.Core.AppData.Search;
 using static GrepWinUi.App.Search.SearchFormControls;
@@ -241,6 +242,67 @@ internal sealed class SearchPropertiesForm : Form
         v.ShowLinesBefore = (int)_showLinesBefore.Value;
         v.ShowLinesAfter = (int)_showLinesAfter.Value;
         v.LimitShowToKeep();
+    }
+
+    /// <summary>Tab / Shift+Tab follow <see cref="TabOrder"/> instead of the container order.</summary>
+    protected override bool ProcessDialogKey(Keys keyData)
+    {
+        if ((keyData & (Keys.KeyCode | Keys.Control | Keys.Alt)) == Keys.Tab
+            && MoveFocus(forward: (keyData & Keys.Shift) == 0))
+        {
+            return true;
+        }
+        return base.ProcessDialogKey(keyData);
+    }
+
+    /// <summary>
+    /// Tab order: search string, file names, folder name first, then all other inputs in layout order
+    /// (only visible and enabled ones).
+    /// </summary>
+    private List<Control> TabOrder() =>
+        [.. FocusOrder.FirstThenRest(Inputs(_content), [_searchString, _fileSpec, _folders])
+            .Where(control => control.CanSelect && control.TabStop)];
+
+    private bool MoveFocus(bool forward)
+    {
+        List<Control> order = TabOrder();
+        if (order.Count == 0)
+        {
+            return false;
+        }
+
+        Control? active = ActiveControl;
+        int current = order.FindIndex(control => control == active || (active is not null && control.Contains(active)));
+        Control next = order[FocusOrder.NextIndex(order.Count, current, forward)];
+        next.Focus();
+        if (next is ComboBox { DropDownStyle: ComboBoxStyle.DropDown } combo)
+        {
+            combo.SelectAll();
+        }
+        else if (next is TextBoxBase text)
+        {
+            text.SelectAll();
+        }
+        return true;
+    }
+
+    /// <summary>Input controls in layout order; layout panels are opened, inputs (incl. NumericUpDown) are not.</summary>
+    private static IEnumerable<Control> Inputs(Control parent)
+    {
+        foreach (Control child in parent.Controls.Cast<Control>().OrderBy(control => control.TabIndex))
+        {
+            if (child is Panel)
+            {
+                foreach (Control input in Inputs(child))
+                {
+                    yield return input;
+                }
+            }
+            else
+            {
+                yield return child;
+            }
+        }
     }
 
     /// <summary>Exit and Start search: keep the edited values and close.</summary>

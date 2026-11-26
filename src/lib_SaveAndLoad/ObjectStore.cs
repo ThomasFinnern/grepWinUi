@@ -11,6 +11,9 @@ public sealed class ObjectStore
     /// <summary>Creates a store working in the given folders.</summary>
     public ObjectStore(StorageFolders folders) => _folders = folders;
 
+    /// <summary>Folders the store works in.</summary>
+    public StorageFolders Folders => _folders;
+
     /// <summary>Full path of the user file of <typeparamref name="T"/>.</summary>
     public string UserFilePath<T>() where T : IStorable =>
         Path.Combine(_folders.UserFolder, T.FileName);

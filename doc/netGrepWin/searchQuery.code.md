@@ -31,4 +31,14 @@ Notes from `..\netGrepWin\NetGrepWin\clsSearchProperties.cs`, `clsGrepTokenListB
 - Files: `SearchStringList.txt`, …; past queries: `LastUsedSearchQueries.txt`
   (`clsObjectListFixedLength<clsSearchProperties>`).
 
+## Save / open a query file (`frmNetGrepWinProgram`)
+
+- File → Save search query: active result form's `SearchProperties.SaveClass2File(file)`;
+  without an active result form nothing happens. Extension `*.prp` ("Search property files").
+- File → Open search query: `OpenSearchFromFileName` tries the file first as a saved **result**
+  (`clsResultsOfOneSearch`, opens it with results), else as a **query** → new result form with it.
+- Both add the file to the last opened files list (`UserLastOpenedFilesList`, File → Last used search files)
+  and store it as `Config.LastUsedSearchPropertyFileName`.
+- `DialogStartFolder(lastFile)`: folder of the last used file if it exists, else the user folder.
+
 Decisions for grepWinUi: [doc/dev/grepWinUicode.md](../dev/grepWinUicode.md).

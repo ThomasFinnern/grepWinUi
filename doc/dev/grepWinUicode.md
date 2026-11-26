@@ -41,6 +41,7 @@ No admin rights needed: nothing is written next to the exe.
 | `FileNamesList` | `FileNames.json` |
 | `FolderNameList` | `FolderNames.json` |
 | `SearchQueryList` | `SearchQueries.json` |
+| `SearchQuery` (File → Save search query) | any `*.json` the user picks; header `Kind` = "grepWinUi search query", `Version` = 1, then `Query` |
 
 ## 3. Libraries
 
@@ -74,7 +75,10 @@ No admin rights needed: nothing is written next to the exe.
 
 ### AppData/Session
 - `LastUsedFiles` (`LastUsed.json`): last query / result / result HTML file and the newest one of
-  them (`AnyFile`, used as fallback start folder of file dialogs).
+  them (`LastUsedFile`: full path of the last saved / opened / loaded file of any kind).
+  `FileDialogFolder(appFolder)`: start folder of all file dialogs = folder of `LastUsedFile`,
+  at the beginning the app's user folder. `StartFolder(lastFile, fallback)`: folder of the last
+  file if it exists, else the fallback. `OrLastUsedFile(file)`: the file if set, else `LastUsedFile`.
 
 ### AppData/Search
 - `SearchQuery`: all inputs of the search properties form.
@@ -106,6 +110,9 @@ No admin rights needed: nothing is written next to the exe.
   "..." + last 30), `DropDownItems(current, items, comparer)` (current value first, no duplicates),
   `HasFileNameOptions` / `HasFolderOptions` (an option differs from its default → `[+]` starts open).
 - `ResultViewOptions.LimitShowToKeep()`: shown lines ≤ kept lines.
+- `SearchQueryFile`: `Save(query, path)` (indented JSON with header, temp file then replace),
+  `Load(path)` (throws `InvalidDataException` when the file is broken or no query file, e.g. another
+  JSON file; `IOException` / `UnauthorizedAccessException` when unreadable). Extension `.json`.
 
 ### Other
 - `AppInfo`: product name, main window title (`grepWinUi 1.2.3`).
@@ -114,13 +121,26 @@ No admin rights needed: nothing is written next to the exe.
 ## 5. App
 
 ### Program start
-`Program.Main` loads `AppConfig` and the `SearchLists` (shows problem texts if any) and runs `MainForm`.
+`Program.Main` loads `AppConfig`, the `SearchLists` (shows problem texts if any) and `LastUsedFiles`,
+and runs `MainForm`.
 When `MainForm` is first shown and no result form is open, it opens a new empty result form
 with the search properties dialog.
 
 ### MainForm (MDI container)
-- `NewSearch()` (File → New search query, Ctrl+N): new `ResultForm` with `lists.StartQuery(config)`
-  and a copy of `config.ResultView`, then the search properties dialog over it.
+- `NewSearch()` (File → New search query, Ctrl+N): `OpenResultForm(lists.StartQuery(config))`.
+- `OpenResultForm(query)`: new `ResultForm` with the query and a copy of `config.ResultView`,
+  then the search properties dialog over it.
+- `OpenSearchQuery()` (File → Open search query, Ctrl+O): query file → `OpenResultForm(query)`.
+- `LoadSearchQuery()` (File → Load search query): query file → `form.ApplySearch(query, form.ViewOptions)`
+  on the active result form (line counts stay), then the dialog; without one like Open.
+- `SaveSearchQuery()` (File → Save search query, Alt+S): active form's `Query` → file.
+  Greyed out without an active result form (`UpdateMenuState` on `MdiChildActivate` and after a
+  result form closes).
+- File dialogs: filter `SearchQueryFile.DialogFilter`, start in `LastUsedFiles.FileDialogFolder(appFolder)`
+  (folder of `LastUsedFile` = last saved / opened / loaded file of any kind, at the beginning
+  `%AppData%\GrepWinUi` from `ObjectStore.Folders.UserFolder`, created if missing; the search results
+  will use the same folder). After save/open/load: `RememberSearchQueryFile`
+  and save `LastUsed.json` (errors ignored: only a start folder). A broken file → warning box.
 - `ShowSearchProperties(form)`: dialog with the form's `Query`, `ViewOptions` and the lists.
   On OK: `form.ApplySearch(...)`, `lists.Remember(...)`, `lists.Save(...)` (warning box on error).
 - `EditSearch()` (Search → Search, Ctrl+F): dialog over the active result form; without one → `NewSearch()`.
@@ -129,6 +149,8 @@ with the search properties dialog.
 
 ### MainMenu
 - Built in code from the screenshots (`*Menu.png`). Handlers come in `MainMenuActions`.
+- File → "Load search query" is new (not in the old program).
+- Items the main window must find get a name (`Named(...)`, e.g. `MainMenu.SaveSearchQueryName`).
 - Items without a handler get `*` automatically (`MenuText`).
 
 ### MainStatusBar
@@ -147,6 +169,11 @@ Works on `AppConfig.Copy()`; `Result` is set on Save.
 - `ViewOptionsBar.Bind(view)`: shows the values and writes every change back into `view`
   (a `_loading` flag stops write-back while loading). Pre/post maximum = keep values.
 - Shows `DummyResultHtml` for now.
+- **Keys in the WebView2 panes:** the WinForms WebView2 control only raises its own `KeyDown` for
+  shortcut keys and doesn't pass them to the window, so the main menu never sees them (Ctrl+F would
+  open the browser's find bar). `OnPaneKeyDown` looks the key up with `MainMenu.FindShortcut`
+  (enabled items without `*` only, so e.g. Ctrl+A still selects text in the pane), marks it handled,
+  and later (`BeginInvoke`, the item may open a modal dialog) activates this form and runs the item.
 
 ### Search/SearchPropertiesForm (modal dialog)
 - Opened with `ShowDialog(resultForm)`, centered over the result form.
@@ -166,6 +193,10 @@ Works on `AppConfig.Copy()`; `Result` is set on Save.
   directly below "Folder names as RegEx".
 - Resizable: title bar, combo boxes and buttons follow the width; opening a section grows the
   dialog up to the screen height; scroll bars when smaller than the content.
+- Tab order: `ProcessDialogKey` handles Tab / Shift+Tab with `TabOrder()` =
+  `FocusOrder.FirstThenRest(inputs in layout order, [search string, file names, folder name])`,
+  only visible and enabled inputs (`FocusOrder` in Core, tested). The three combo boxes sit in
+  different sections, so normal `TabIndex` values can't give this order.
 - Cancel (Esc) discards; Exit and Start search (Enter) keep the values (Start search also sets
   `StartSearchRequested`; searching itself is missing, so it keeps its `*`). `...` has no function yet.
 - **`NoEffect(...)`**: parameter names without effect are struck through; remove it in the step
@@ -185,6 +216,10 @@ Works on `AppConfig.Copy()`; `Result` is set on Save.
 - **New result form** starts with a copy of the newest past query (old program: last used query),
   else the defaults.
 - **Skip binary files / Only binary files** stay independent checkboxes (decided in step 14).
+- **Query files** (step 15): own JSON format with a header, extension `.json`. Open → new result form,
+  Load → replaces the active form's query; both open the search properties dialog. Save is greyed
+  out without an active result form (old program: did nothing). Opening a query file does not
+  add it to the past queries; the last used files list (File → Last used search files) comes later.
 - **Line counts** are not part of `SearchQuery`. They live in the result form's `ViewOptions`
   (copied from the settings when the form is created). The dialog's show/keep values and the
   header line's pre/post lines edit the same values. Shown lines can't exceed kept lines (as in the old program).
