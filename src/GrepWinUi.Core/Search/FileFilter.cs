@@ -56,6 +56,20 @@ public sealed class FileFilter
     }
 
     /// <summary>
+    /// Problems that stop "Start search" in the search dialog: invalid RegEx inputs
+    /// (<see cref="RegexProblems"/>) and "Skip binary files" together with "Only binary files".
+    /// </summary>
+    public static IReadOnlyList<string> StartProblems(SearchQuery query)
+    {
+        List<string> problems = [.. RegexProblems(query)];
+        if (query.SkipBinaryFiles && query.OnlyBinaryFiles)
+        {
+            problems.Add("\"Skip binary files\" and \"Only binary files\" together search no file.");
+        }
+        return problems;
+    }
+
+    /// <summary>
     /// True when the files of a folder are searched: base name as RegEx matches the folder's last name
     /// (always true without that option).
     /// </summary>

@@ -83,7 +83,22 @@ public static class SearchEngine
                 progress?.Report(new SearchProgress(filesSearched, finder.FoldersSearched, files.Count, path, totalFiles));
             }
 
-            FileResult? file = SearchFile(path, matcher, problems, cancel, keep, mode);
+            FileKind kind;
+            try
+            {
+                kind = FileKind.DetectFile(path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                problems.Add($"File not readable: '{path}' ({ex.Message})");
+                continue;
+            }
+            if ((query.SkipBinaryFiles && kind.IsBinary) || (query.OnlyBinaryFiles && !kind.IsBinary))
+            {
+                continue;
+            }
+
+            FileResult? file = SearchFile(path, matcher, problems, cancel, keep, mode, kind);
             if (file is not null)
             {
                 files.Add(file);
@@ -128,8 +143,9 @@ public static class SearchEngine
     }
 
     /// <summary>
-    /// Matching lines of one file, or null when it has none. Read as UTF-8; UTF-16 / UTF-32 files are
-    /// detected by their byte order mark. An unreadable file, or one where the regular expression takes
+    /// Matching lines of one file, or null when it has none. Read with the encoding of <paramref name="kind"/>
+    /// (null: <see cref="FileKind.DetectFile"/>); in a binary file control characters become '·'. Very long
+    /// lines are cut (<see cref="LongLines"/>). An unreadable file, or one where the regular expression takes
     /// too long for a line (<see cref="LineMatcher.RegexTimeout"/>), is noted in <paramref name="problems"/>
     /// and gives null. Keeps up to <paramref name="keep"/> lines before / after each found line:
     /// the last lines before wait in a small queue and are only stored when a found line follows.
@@ -140,7 +156,7 @@ public static class SearchEngine
     /// </summary>
     public static FileResult? SearchFile(
         string path, LineMatcher matcher, List<string> problems, CancellationToken cancel,
-        KeepLines keep = default, ResultMode mode = default)
+        KeepLines keep = default, ResultMode mode = default, FileKind? kind = null)
     {
         List<LineMatch> lines = [];
         List<ContextLine> context = [];
@@ -149,10 +165,12 @@ public static class SearchEngine
         bool foundAny = false;
         try
         {
-            using StreamReader reader = new(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+            FileKind fileKind = kind ?? FileKind.DetectFile(path);
+            using StreamReader reader = new(path, fileKind.Encoding, detectEncodingFromByteOrderMarks: !fileKind.IsBinary);
             int lineNumber = 0;
-            while (reader.ReadLine() is string line)
+            while (reader.ReadLine() is string read)
             {
+                string line = fileKind.IsBinary ? FileKind.ShowControlCharacters(read) : read;
                 lineNumber++;
                 IReadOnlyList<Hit> hits = matcher.Find(line);
                 bool found = (hits.Count > 0) != mode.NonMatchingLines;
@@ -164,19 +182,19 @@ public static class SearchEngine
                 }
                 if (takeLine)
                 {
-                    lines.Add(new LineMatch(lineNumber, line, mode.NonMatchingLines ? [] : hits));
+                    lines.Add(LongLines.Cut(new LineMatch(lineNumber, line, mode.NonMatchingLines ? [] : hits)));
                     context.AddRange(waiting);
                     waiting.Clear();
                     afterLeft = keep.After;
                 }
                 else if (afterLeft > 0)
                 {
-                    context.Add(new ContextLine(lineNumber, line));
+                    context.Add(new ContextLine(lineNumber, LongLines.Cut(line)));
                     afterLeft--;
                 }
                 else if (keep.Before > 0)
                 {
-                    waiting.Enqueue(new ContextLine(lineNumber, line));
+                    waiting.Enqueue(new ContextLine(lineNumber, LongLines.Cut(line)));
                     if (waiting.Count > keep.Before)
                     {
                         waiting.Dequeue();

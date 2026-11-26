@@ -82,6 +82,14 @@ redesign from start with the help of AI
     that takes the expression longer than 2 s skips its file (listed as a problem).
   - **Match whole line:** the search string must cover the whole line; blanks at the start and end of
     the line don't count (an indented `    return x;` matches `return x;`).
+- **Text encodings:** each file is read with its own encoding, found from its first 8 KB: byte order
+  mark (UTF-8, UTF-16, UTF-32), UTF-16 without byte order mark, UTF-8, else the ANSI code page of the PC
+  (e.g. Windows-1252), so umlauts show right in all of them.
+- **Binary files** (search properties dialog, File names section): a file with a 0 byte in its first
+  8 KB counts as binary. **Skip binary files** leaves them out, **Only binary files** searches only them;
+  without both they are searched too. In binary files control characters are shown as `·`.
+  Very long lines (binary or minified files) are cut to 2000 characters around the first hit (`…` marks
+  a cut end).
 - **Result modes** (search properties dialog, Search string section):
   - **First match per file only:** each file shows only its first matching line (plus its lines after).
   - **List files without match:** lists only the files that do **not** contain the search string.

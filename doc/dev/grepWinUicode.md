@@ -159,6 +159,18 @@ No admin rights needed: nothing is written next to the exe.
   (FileNamesOnly like grep -l, user decision; FilesWithoutMatch wins when both are set).
   `ResultPageHtml`: column "Matches" / "Lines" / none, `LinesTitleKind(query)` ("Lines with" / "Lines
   without" / "Files without" / "Files with"), "Found no files / lines without match for …".
+- `FileKind(IsBinary, Encoding)` (step 25): `Detect(first 8 KB)` in this order: byte order mark (UTF-8,
+  UTF-32 LE/BE, UTF-16 LE/BE) → UTF-16 without BOM (≥ 70 % of the byte pairs have a 0 on one side, ≤ 10 %
+  on the other) → a 0 byte = binary (Latin-1, each byte one char) → valid UTF-8 (strict decoder, a char
+  cut at the end of the sample allowed) → `Ansi` = code page of `CultureInfo.CurrentCulture.TextInfo
+  .ANSICodePage` (needs `CodePagesEncodingProvider`, registered when `Ansi` is first used; Latin-1 if not
+  available). `ShowControlCharacters(line)`: control chars except tab (also 0x7F–0x9F) → '·', same length.
+- `LongLines` (step 25): `MaxLength` 2000; `Cut(LineMatch)` keeps a window starting `KeepBeforeHit` (200)
+  chars before the first hit, hits outside dropped, others moved, `…` at cut ends; `Cut(string)` for kept
+  lines (first 2000 chars). Keeps the pages below WebView2's ~2 MB `NavigateToString` limit. A huge line
+  is still read into memory once by `ReadLine`.
+- `FileFilter.StartProblems(query)` (step 25): `RegexProblems` + both binary options set; used by the
+  dialog's Start search (message box "Search not started").
 - `FolderList.Split(text, folderExists)` (step 23): blanks separate, double quotes keep blanks (as the old
   `ExtractFolderListWithApostrophes`), duplicates (case ignored) dropped; a whole text with blanks that is
   an existing folder is one folder (old inputs without quotes keep working).
@@ -191,9 +203,11 @@ No admin rights needed: nothing is written next to the exe.
     not equal for marks / connector punctuation other than '_').
 - `SearchEngine.RunAsync(query, progress, cancel)`: `Task.Run` over `Run(...)` with a copy of the query.
   Empty search string → no search, problem "Search string is empty"; invalid regular expression →
-  no search, problem "Invalid regular expression: …"; a regex timeout skips the file (problem). Files are read line by line as
-  UTF-8 (`StreamReader`, UTF-16/32 detected by byte order mark; ANSI detection: step 25; binary files
-  are read like text until step 25). Unreadable file → `Problems`. Progress at most every 100 ms and
+  no search, problem "Invalid regular expression: …"; a regex timeout skips the file (problem). Files are read line by line
+  (`StreamReader`) with the encoding of `FileKind.DetectFile(path)` (step 25). Unreadable file → `Problems`.
+  Step 25: `Run` detects each file first; "Skip binary files" / "Only binary files" leave files out (they
+  still count in `FilesSearched`); `SearchFile(…, kind)` replaces control characters of binary lines
+  (`FileKind.ShowControlCharacters`) before matching and cuts long lines (`LongLines.Cut`). Progress at most every 100 ms and
   once at the end. Cancel → result so far with `Cancelled = true`, no exception.
   Step 22: `Run` / `RunAsync` / `SearchFile` take `KeepLines keep` (default none; the result form passes
   its `ViewOptions.KeepLinesBefore/After`). While reading a file the last `keep.Before` lines wait in a
@@ -415,7 +429,8 @@ program, Search string token, File name token, Folder name token. Works on `AppC
 - **Search engine** (step 17): runs on a background thread (old program: UI thread, window froze);
   a file matching several patterns is searched once (old: once per pattern); inaccessible folders
   and unreadable files are noted and skipped (old: exception / message box); empty search string →
-  no search (old: matched every line); files read as UTF-8 (old: ANSI code page).
+  no search (old: matched every line); encoding per file (step 25; old: ANSI code page for all files,
+  BOM only); binary files detected (old: read like text).
 - **Status bar** (step 19): one status bar in the main window showing the active result form's status
   (old: one per result form). Folder = last name of the folder being read (old: folder count);
   Files = read / all, "?" for all until files are counted first (step 20); Time = `hh:mm:ss`

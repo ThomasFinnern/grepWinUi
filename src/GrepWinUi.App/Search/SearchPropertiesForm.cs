@@ -60,8 +60,8 @@ internal sealed class SearchPropertiesForm : Form
     private readonly ComboBox _fileSpec = TextCombo();
     private readonly CheckBox _regexFileNames = Check("File names as RegEx");
     private readonly CheckBox _searchInZip = NoEffect(Check("Search inside ZIP archives"));
-    private readonly CheckBox _skipBinaryFiles = NoEffect(Check("Skip binary files"));
-    private readonly CheckBox _onlyBinaryFiles = NoEffect(Check("Only binary files"));
+    private readonly CheckBox _skipBinaryFiles = Check("Skip binary files");
+    private readonly CheckBox _onlyBinaryFiles = Check("Only binary files");
     private readonly CheckBox _skipByExtension = Check("Skip by extension");
     private readonly ComboBox _skipExtensions = TextCombo(400);
 
@@ -312,7 +312,8 @@ internal sealed class SearchPropertiesForm : Form
 
     /// <summary>
     /// Exit and Start search: keep the edited values and close. Start search with an invalid regular
-    /// expression (search string, file names, folder names, base name) shows the problems and keeps the dialog open.
+    /// expression (search string, file names, folder names, base name) or both binary options shows the
+    /// problems and keeps the dialog open.
     /// </summary>
     private void Accept(bool startSearch)
     {
@@ -320,10 +321,10 @@ internal sealed class SearchPropertiesForm : Form
         {
             SearchQuery check = _query.Copy();
             SaveTo(check, _view with { });
-            IReadOnlyList<string> problems = FileFilter.RegexProblems(check);
+            IReadOnlyList<string> problems = FileFilter.StartProblems(check);
             if (problems.Count > 0)
             {
-                MessageBox.Show(this, string.Join("\n\n", problems), "Invalid regular expression",
+                MessageBox.Show(this, string.Join("\n\n", problems), "Search not started",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
