@@ -72,7 +72,7 @@ internal sealed class SearchPropertiesForm : Form
     private readonly RadioButton _regexPathName = NoEffect(Radio("path name"));
     private readonly CheckBox _baseNameRegex = NoEffect(Check("Base name as RegEx"));
     private readonly TextBox _baseNamePattern = new() { Width = 300 };
-    private readonly CheckBox _countFilesFirst = NoEffect(Check("Count files first (progress in %)"));
+    private readonly CheckBox _countFilesFirst = Check("Count files first (progress in %)");
     private readonly CheckBox _skipFolders = NoEffect(Check("Skip folders"));
     private readonly ComboBox _skipFolderNames = TextCombo(400);
 

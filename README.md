@@ -15,9 +15,14 @@ redesign from start with the help of AI
   "Searching '…'", **Info** the file being read (Options → Settings → While searching →
   "Show file names in status bar"), **Working** a running animation, **Folder** the last name of the
   folder being read (`e:\wamp64\www\api_6x` shows `api_6x`), **Files** files read / all files
-  (`12 / ?`: all files are not counted yet), **Time** counting up. After the search: "Search done" or
+  (`12 / ?` when all files are not known), **Time** counting up. After the search: "Search done" or
   "Search cancelled", the number of matches, files and searched files, and the search time.
   Switching to another result window shows its status.
+- **Count files first (progress in %):** tick it in the search properties dialog (below the Folder name
+  section) to find all files before searching. The status bar then shows "Counting files for
+  '…'", and while searching Files shows `12 / 57` and Working the progress in %. Without it, Working
+  shows a running animation. New searches start with the value from Options → Settings → While
+  searching → "Count files first and show progress in %".
 - **Settings:** stored per user in `%AppData%\GrepWinUi\Config.json` (no admin rights needed).
   Until you change a setting, the standard values from `Defaults\Config.json` next to the exe are used.
 - **File → New search query (Ctrl+N):** opens a new search result window inside the main window.

@@ -30,7 +30,10 @@ internal sealed class MainStatusBar : StatusStrip
         ShowStatus(SearchStatus.Idle);
     }
 
-    /// <summary>Shows <paramref name="status"/>; Working animates (marquee) while the search runs.</summary>
+    /// <summary>
+    /// Shows <paramref name="status"/>. Working while the search runs: the percent when all files were
+    /// counted first, else a running animation (marquee).
+    /// </summary>
     public void ShowStatus(SearchStatus status)
     {
         _title.Text = "Title: " + status.Title;
@@ -39,12 +42,13 @@ internal sealed class MainStatusBar : StatusStrip
         _files.Text = "Files: " + status.Files;
         _time.Text = "Time: " + status.Time;
 
-        ProgressBarStyle style = status.IsRunning ? ProgressBarStyle.Marquee : ProgressBarStyle.Blocks;
+        bool marquee = status.IsRunning && status.Percent is null;
+        ProgressBarStyle style = marquee ? ProgressBarStyle.Marquee : ProgressBarStyle.Blocks;
         if (_working.Style != style)
         {
             _working.Style = style;
         }
-        _working.Value = 0;
+        _working.Value = status.IsRunning ? status.Percent ?? 0 : 0;
     }
 
     /// <summary>Status bar text field with a separator line on its left side.</summary>

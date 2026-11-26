@@ -145,6 +145,51 @@ public sealed class SearchEngineTests : IDisposable
     }
 
     [Fact]
+    public void Run_CountFilesFirst_SameResultAndTotalInProgress()
+    {
+        SearchQuery query = Query("function", "*.*");
+        query.CountFilesFirst = true;
+        ListProgress progress = new();
+
+        SearchResult counted = SearchEngine.Run(query, progress, CancellationToken.None);
+        SearchResult plain = SearchEngine.Run(Query("function", "*.*"), null, CancellationToken.None);
+
+        Assert.Equal(plain.Files.Select(file => file.Path), counted.Files.Select(file => file.Path));
+        Assert.Equal(plain.MatchCount, counted.MatchCount);
+        Assert.True(progress.Reports[0].Counting);
+        SearchProgress last = progress.Reports[^1];
+        Assert.False(last.Counting);
+        Assert.Equal(5, last.TotalFiles);
+        Assert.Equal(5, last.FilesSearched);
+        Assert.Equal(3, last.FoldersSearched);
+    }
+
+    [Fact]
+    public void Run_WithoutCountFilesFirst_TotalUnknown()
+    {
+        ListProgress progress = new();
+
+        SearchEngine.Run(Query("function", "*.*"), progress, CancellationToken.None);
+
+        Assert.All(progress.Reports, report => Assert.False(report.Counting));
+        Assert.Null(progress.Reports[^1].TotalFiles);
+    }
+
+    [Fact]
+    public void Run_CountFilesFirst_Cancelled_NoFilesSearched()
+    {
+        SearchQuery query = Query("function", "*.*");
+        query.CountFilesFirst = true;
+        using CancellationTokenSource cancel = new();
+        cancel.Cancel();
+
+        SearchResult result = SearchEngine.Run(query, null, cancel.Token);
+
+        Assert.True(result.Cancelled);
+        Assert.Equal(0, result.FilesSearched);
+    }
+
+    [Fact]
     public async Task RunAsync_SameResultAsRun()
     {
         SearchResult result = await SearchEngine.RunAsync(Query("function", "*.*"), null, CancellationToken.None);

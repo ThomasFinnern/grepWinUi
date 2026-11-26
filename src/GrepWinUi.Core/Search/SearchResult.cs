@@ -41,5 +41,12 @@ public sealed record Hit(int Start, int Length);
 /// <param name="FilesSearched">Files read so far.</param>
 /// <param name="FoldersSearched">Folders looked into so far.</param>
 /// <param name="FilesMatched">Files with at least one match so far.</param>
-/// <param name="CurrentFile">File being read.</param>
-public sealed record SearchProgress(int FilesSearched, int FoldersSearched, int FilesMatched, string CurrentFile);
+/// <param name="CurrentFile">File being read (while counting: the file just found).</param>
+/// <param name="TotalFiles">
+/// All files to search, known when the files were counted first ("Count files first"); null otherwise.
+/// While <paramref name="Counting"/>: the files counted so far.
+/// </param>
+/// <param name="Counting">True while the files are counted before the search.</param>
+public sealed record SearchProgress(
+    int FilesSearched, int FoldersSearched, int FilesMatched, string CurrentFile,
+    int? TotalFiles = null, bool Counting = false);

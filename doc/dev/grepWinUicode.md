@@ -177,9 +177,11 @@ No admin rights needed: nothing is written next to the exe.
   - All text HTML encoded; at most `MaxLines` (5000) lines, because `NavigateToString` takes only about 2 MB.
   - Size / date columns of the old file list are not there yet (the result model has no size/date).
 - `SearchStatus` (step 19): status bar texts of one result form, record `(Title, Info, Folder, Files,
-  Time, IsRunning)`. `Idle` (all empty), `Running(query, progress, elapsed, showFileNames)` ("Searching
-  '…'", current file as Info only if `showFileNames`, Folder = last name of the current file's folder or
-  of the search folder, Files "12 / ?"), `Done(result)` ("Search done" / "Search cancelled", Info
+  Time, IsRunning, Percent)`. `Idle` (all empty), `Running(query, progress, elapsed, showFileNames)`
+  ("Searching '…'", current file as Info only if `showFileNames`, Folder = last name of the current
+  file's folder or of the search folder, Files "12 / ?"; with a known total (step 20) "12 / 57" and
+  `Percent` = `PercentOf(read, all)`; while counting "Counting files for '…'" and Files = counted / ?;
+  before the first report the query's `CountFilesFirst` decides), `Done(result)` ("Search done" / "Search cancelled", Info
   "154 matches in 48 files from 57 files searched", Files "57 / 57", cancelled "57 / ?"),
   `Failed(query, message, elapsed)`. Helpers `LastFolderName(folder)` (`e:\a\api_6x\` → `api_6x`, a
   drive root stays) and `TimeText(elapsed)` (`00:00:07`, hours beyond 24).
@@ -236,7 +238,8 @@ with the search properties dialog.
 
 ### MainStatusBar
 Fields Title, Info, Working (progress bar), Folder, Files, Time (see "UI spec: status bar" in CLAUDE.md).
-`ShowStatus(SearchStatus)` writes "Title: …" etc.; Working is a marquee while `IsRunning`, else empty.
+`ShowStatus(SearchStatus)` writes "Title: …" etc.; Working while `IsRunning`: `Percent` as a normal bar
+when known, else a marquee; empty when not running.
 `MainForm.UpdateStatusBar()` shows the status of the active result form (`SearchStatus.Idle` without
 one); called on `MdiChildActivate`, after a form is closed and on the active form's `StatusChanged`.
 
@@ -342,6 +345,11 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   (copied from the settings when the form is created). The dialog's show/keep values and the
   header line's pre/post lines edit the same values. Shown lines can't exceed kept lines (as in the old program).
 - **Count files first** starts with the Settings value and can be changed per search.
+  Step 20 (new, the old program had only an unused checkbox): `SearchEngine` first collects all found
+  files in a list (`CountFiles`, progress with `Counting = true` and the files counted so far in
+  `TotalFiles`), then searches that list (no second folder walk) with `TotalFiles` = all files.
+  Without it one single pass, `TotalFiles` null. A cancelled search shows Files "n / ?" at the end
+  (the result has no total; would need a field in `*.result.json`).
 - **Same search** = same search string + file names + folder name: the user only sees an
   abbreviation in the list, so variants with other options can't be told apart; the newest
   options replace the older entry.

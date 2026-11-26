@@ -6,7 +6,9 @@ namespace GrepWinUi.Core.Search;
 
 /// <summary>
 /// Runs a search on a background thread: finds the files (<see cref="FileFinder"/>) and the matching
-/// lines (<see cref="LineMatcher"/>). Cancelling returns what was found so far (no exception).
+/// lines (<see cref="LineMatcher"/>). With <see cref="SearchQuery.CountFilesFirst"/> all files are found
+/// and counted first, so the progress knows the total (progress in %).
+/// Cancelling returns what was found so far (no exception).
 /// Basic version: one folder, file name wildcards, plain text ignoring case.
 /// </summary>
 public static class SearchEngine
@@ -38,13 +40,26 @@ public static class SearchEngine
         int matchCount = 0;
         TimeSpan lastReport = TimeSpan.Zero;
 
-        foreach (string path in finder.Find(query.FolderName, query.FileNames, query.IncludeSubfolders, cancel))
+        IEnumerable<string> paths = finder.Find(query.FolderName, query.FileNames, query.IncludeSubfolders, cancel);
+        int? totalFiles = null;
+        if (query.CountFilesFirst)
         {
+            List<string> counted = CountFiles(paths, finder, progress, time, cancel);
+            totalFiles = counted.Count;
+            paths = counted;
+        }
+
+        foreach (string path in paths)
+        {
+            if (cancel.IsCancellationRequested)
+            {
+                break;
+            }
             filesSearched++;
             if (time.Elapsed - lastReport >= ProgressInterval)
             {
                 lastReport = time.Elapsed;
-                progress?.Report(new SearchProgress(filesSearched, finder.FoldersSearched, files.Count, path));
+                progress?.Report(new SearchProgress(filesSearched, finder.FoldersSearched, files.Count, path, totalFiles));
             }
 
             FileResult? file = SearchFile(path, matcher, problems, cancel);
@@ -59,10 +74,36 @@ public static class SearchEngine
             }
         }
 
-        progress?.Report(new SearchProgress(filesSearched, finder.FoldersSearched, files.Count, ""));
+        progress?.Report(new SearchProgress(filesSearched, finder.FoldersSearched, files.Count, "", totalFiles));
         return new SearchResult(
             query, files, filesSearched, finder.FoldersSearched, matchCount, time.Elapsed,
             cancel.IsCancellationRequested, [.. finder.Problems, .. problems]);
+    }
+
+    /// <summary>
+    /// "Count files first": finds all files before the search. Reports progress with
+    /// <see cref="SearchProgress.Counting"/> set (at the start, then at most every <see cref="ProgressInterval"/>).
+    /// </summary>
+    private static List<string> CountFiles(
+        IEnumerable<string> paths, FileFinder finder, IProgress<SearchProgress>? progress, Stopwatch time, CancellationToken cancel)
+    {
+        List<string> files = [];
+        TimeSpan lastReport = time.Elapsed;
+        progress?.Report(new SearchProgress(0, 0, 0, "", TotalFiles: 0, Counting: true));
+        foreach (string path in paths)
+        {
+            files.Add(path);
+            if (time.Elapsed - lastReport >= ProgressInterval)
+            {
+                lastReport = time.Elapsed;
+                progress?.Report(new SearchProgress(0, finder.FoldersSearched, 0, path, files.Count, Counting: true));
+            }
+            if (cancel.IsCancellationRequested)
+            {
+                break;
+            }
+        }
+        return files;
     }
 
     /// <summary>
