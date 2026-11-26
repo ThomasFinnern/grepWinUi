@@ -197,6 +197,8 @@ One step = one session. Steps 1–14 (with 13a, 13b) are done.
 1. [ ] 15 File menu "Save search query" (Alt+S): write the active result form's query to a file
        (own JSON format). "Open search query" (Ctrl+O): load a query file; opening starts a new
        result (search) form with that query and its search properties dialog.
+       New File menu item "Load search query" (below "Open search query"): load a query file and
+       replace the query of the active result form (without one, a new result form is created).
        File dialogs start in the folder of the last used query file (`LastUsedFiles`).
 1. [ ] Options menu: "Search string lists", "Search files spec. list", "Search folder list"
        (edit the recent-first lists)
@@ -225,4 +227,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 15: File menu: save / open search query (open starts a new result form with the query).
+Step 15: File menu: save / open / load search query (open starts a new result form, load replaces the query of the active one).
