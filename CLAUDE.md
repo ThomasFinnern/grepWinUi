@@ -167,7 +167,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–12, 13a and 13b are done.
+One step = one session. Steps 1–14 (with 13a, 13b) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -190,10 +190,14 @@ One step = one session. Steps 1–12, 13a and 13b are done.
        without a result form: new empty result form with the dialog open; empty dropdowns, no data, no search
 1. [x] 13b Search query model: a `SearchQuery` class in Core with exactly the fields of the form;
        recent-first lists (search strings, file specs, folders, past queries); tests
-1. [ ] 14 Connect form and model: the form is filled with the active result form's search data
+1. [x] 14 Connect form and model: the form is filled with the active result form's search data
        and writes the changes back to it; dropdowns filled from the lists; no search.
        Line counts: the dialog's show/keep values and the header line's pre/post lines edit the same
        `ViewOptions` of the result form (copied from the settings when the form is created).
+1. [ ] 15 File menu "Save search query" (Alt+S): write the active result form's query to a file
+       (own JSON format). "Open search query" (Ctrl+O): load a query file; opening starts a new
+       result (search) form with that query and its search properties dialog.
+       File dialogs start in the folder of the last used query file (`LastUsedFiles`).
 1. [ ] Options menu: "Search string lists", "Search files spec. list", "Search folder list"
        (edit the recent-first lists)
 1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
@@ -221,4 +225,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 14: Connect search form and model (fill the form from the active result form, write back, dropdowns from the lists).
+Step 15: File menu: save / open search query (open starts a new result form with the query).

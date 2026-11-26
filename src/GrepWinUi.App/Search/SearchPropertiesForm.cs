@@ -1,10 +1,13 @@
+using GrepWinUi.Core.AppData.Config;
+using GrepWinUi.Core.AppData.Search;
 using static GrepWinUi.App.Search.SearchFormControls;
 
 namespace GrepWinUi.App.Search;
 
 /// <summary>
-/// Modal dialog "Search properties": search string, file types, folders and their options.
-/// Layout only for now: no data is loaded or written back, Start search has no function.
+/// Modal dialog "Search properties": search string, file names, folder name and their options,
+/// lines before/after a match. Works on copies of the result form's query and view options;
+/// <see cref="Query"/> and <see cref="ViewOptions"/> hold the edited values after Exit or Start search.
 /// Contains more options than the old program (also its hidden ones and ideas for later).
 /// </summary>
 internal sealed class SearchPropertiesForm : Form
@@ -19,6 +22,8 @@ internal sealed class SearchPropertiesForm : Form
     private readonly Label _title = TitleBar();
     private readonly FlowLayoutPanel _buttons;
     private readonly int _minContentWidth;
+    private readonly SearchQuery _query;
+    private readonly ResultViewOptions _view;
 
     // --- Search string ---
     private readonly ComboBox _searchString = TextCombo();
@@ -44,7 +49,6 @@ internal sealed class SearchPropertiesForm : Form
     {
         Width = 80,
         DropDownStyle = ComboBoxStyle.DropDownList,
-        DataSource = new[] { "Seconds", "Minutes", "Hours", "Days", "Weeks", "Months", "Years" },
     };
     private readonly CheckBox _dateRange = NoEffect(Check("Modified between"));
     private readonly DateTimePicker _rangeStart = DatePicker();
@@ -77,23 +81,31 @@ internal sealed class SearchPropertiesForm : Form
     private readonly NumericUpDown _keepLinesBefore = Number();
     private readonly NumericUpDown _keepLinesAfter = Number();
 
-    /// <summary>Creates the dialog with all inputs (empty). The search string options start open.</summary>
-    public SearchPropertiesForm()
+    /// <summary>Creates the dialog filled with copies of <paramref name="query"/> and <paramref name="view"/>.</summary>
+    /// <param name="query">Query of the result form.</param>
+    /// <param name="view">View options of the result form (line counts).</param>
+    /// <param name="lists">Recent lists for the dropdowns.</param>
+    public SearchPropertiesForm(SearchQuery query, ResultViewOptions view, SearchLists lists)
     {
+        _query = query.Copy();
+        _view = view with { };
+
         Text = "Search properties";
         FormBorderStyle = FormBorderStyle.Sizable;
         StartPosition = FormStartPosition.CenterParent;
         MinimizeBox = false;
         ShowInTaskbar = false;
 
-        _regexPathAndFileName.Checked = true;
+        _olderThanUnit.Items.AddRange(Enum.GetValues<TimeUnit>().Cast<object>().ToArray());
         _buttons = Buttons();
+        LimitShowToKeep(_showLinesBefore, _keepLinesBefore);
+        LimitShowToKeep(_showLinesAfter, _keepLinesAfter);
 
         _content = Column(
             _title,
             Section(NoEffect(SectionTitle("Search string")), _searchString, SearchStringOptions(), expanded: true),
-            Section(NoEffect(SectionTitle("File names")), _fileSpec, FileTypeOptions()),
-            Section(NoEffect(SectionTitle("Folder name")), _folders, FolderOptions()),
+            Section(NoEffect(SectionTitle("File names")), _fileSpec, FileTypeOptions(), SearchQueryText.HasFileNameOptions(_query)),
+            Section(NoEffect(SectionTitle("Folder name")), _folders, FolderOptions(), SearchQueryText.HasFolderOptions(_query)),
             _countFilesFirst,
             LineNumbers(),
             _buttons);
@@ -103,6 +115,11 @@ internal sealed class SearchPropertiesForm : Form
         _content.Padding = new Padding(10);
         Controls.Add(_content);
 
+        FillDropDown(_searchString, _query.SearchString, lists.SearchStrings.Items, StringComparer.Ordinal);
+        FillDropDown(_fileSpec, _query.FileNames, lists.FileNames.Items, StringComparer.OrdinalIgnoreCase);
+        FillDropDown(_folders, _query.FolderName, lists.FolderNames.Items, StringComparer.OrdinalIgnoreCase);
+        LoadFrom(_query, _view);
+
         Size preferred = _content.GetPreferredSize(Size.Empty);
         _minContentWidth = preferred.Width - _content.Padding.Horizontal;
         ClientSize = preferred;
@@ -111,6 +128,143 @@ internal sealed class SearchPropertiesForm : Form
         _content.ClientSizeChanged += (_, _) => FitWidth();
         FitWidth();
         Shown += (_, _) => _searchString.Focus();
+    }
+
+    /// <summary>Edited query after Exit or Start search.</summary>
+    public SearchQuery Query => _query;
+
+    /// <summary>Edited view options (line counts) after Exit or Start search.</summary>
+    public ResultViewOptions ViewOptions => _view;
+
+    /// <summary>True when the dialog was closed with Start search.</summary>
+    public bool StartSearchRequested { get; private set; }
+
+    /// <summary>Fills the controls.</summary>
+    private void LoadFrom(SearchQuery q, ResultViewOptions v)
+    {
+        _wholeWordsOnly.Checked = q.WholeWordsOnly;
+        _matchCase.Checked = q.MatchCase;
+        _useRegex.Checked = q.RegularExpression;
+        _stopAfterFirstMatch.Checked = q.FirstMatchPerFileOnly;
+        _filesWithNoMatch.Checked = q.ListFilesWithoutMatch;
+        _linesWithNoMatch.Checked = q.NonMatchingLines;
+        _searchInFoundFiles.Checked = q.OnlyInFilesOfCurrentResult;
+        _completeLine.Checked = q.MatchWholeLine;
+        _fileNamesOnly.Checked = q.FileNamesOnly;
+        _fixedWidth.Checked = q.FixedWidthField;
+        SetNumber(_fixedBegin, q.FixedWidthStartColumn);
+        SetNumber(_fixedSize, q.FixedWidthWidth);
+        _delimited.Checked = q.DelimitedField;
+        _delimiter.Text = q.DelimitedSeparator;
+        SetNumber(_delimitedField, q.DelimitedFieldNumber);
+        _useDateTime.Checked = q.FilterByFileDate;
+        _notOlderThan.Checked = q.ModifiedWithinLast;
+        SetNumber(_olderThanValue, q.ModifiedWithinValue);
+        _olderThanUnit.SelectedItem = q.ModifiedWithinUnit;
+        _dateRange.Checked = q.ModifiedBetween;
+        _rangeStart.Value = q.ModifiedFrom ?? DateTime.Today;
+        _rangeEnd.Value = q.ModifiedTo ?? DateTime.Today;
+
+        _regexFileNames.Checked = q.FileNamesAsRegex;
+        _searchInZip.Checked = q.SearchInsideZipArchives;
+        _skipBinaryFiles.Checked = q.SkipBinaryFiles;
+        _onlyBinaryFiles.Checked = q.OnlyBinaryFiles;
+        _skipByExtension.Checked = q.SkipByExtension;
+        _skipExtensions.Text = q.SkippedExtensions;
+
+        _recurseFolders.Checked = q.IncludeSubfolders;
+        _regexFolderNames.Checked = q.FolderNamesAsRegex;
+        _regexPathAndFileName.Checked = q.RegularExpressionOn == RegexTarget.PathAndFileName;
+        _regexPathName.Checked = q.RegularExpressionOn == RegexTarget.PathName;
+        _baseNameRegex.Checked = q.BaseNameAsRegex;
+        _baseNamePattern.Text = q.BaseNamePattern;
+        _skipFolders.Checked = q.SkipFolders;
+        _skipFolderNames.Text = q.SkippedFolders;
+        _countFilesFirst.Checked = q.CountFilesFirst;
+
+        SetNumber(_keepLinesBefore, v.KeepLinesBefore);
+        SetNumber(_keepLinesAfter, v.KeepLinesAfter);
+        SetNumber(_showLinesBefore, v.ShowLinesBefore);
+        SetNumber(_showLinesAfter, v.ShowLinesAfter);
+    }
+
+    /// <summary>Writes the controls into the copies.</summary>
+    private void SaveTo(SearchQuery q, ResultViewOptions v)
+    {
+        q.SearchString = _searchString.Text;
+        q.WholeWordsOnly = _wholeWordsOnly.Checked;
+        q.MatchCase = _matchCase.Checked;
+        q.RegularExpression = _useRegex.Checked;
+        q.FirstMatchPerFileOnly = _stopAfterFirstMatch.Checked;
+        q.ListFilesWithoutMatch = _filesWithNoMatch.Checked;
+        q.NonMatchingLines = _linesWithNoMatch.Checked;
+        q.OnlyInFilesOfCurrentResult = _searchInFoundFiles.Checked;
+        q.MatchWholeLine = _completeLine.Checked;
+        q.FileNamesOnly = _fileNamesOnly.Checked;
+        q.FixedWidthField = _fixedWidth.Checked;
+        q.FixedWidthStartColumn = (int)_fixedBegin.Value;
+        q.FixedWidthWidth = (int)_fixedSize.Value;
+        q.DelimitedField = _delimited.Checked;
+        q.DelimitedSeparator = _delimiter.Text;
+        q.DelimitedFieldNumber = (int)_delimitedField.Value;
+        q.FilterByFileDate = _useDateTime.Checked;
+        q.ModifiedWithinLast = _notOlderThan.Checked;
+        q.ModifiedWithinValue = (int)_olderThanValue.Value;
+        q.ModifiedWithinUnit = _olderThanUnit.SelectedItem is TimeUnit unit ? unit : TimeUnit.Days;
+        q.ModifiedBetween = _dateRange.Checked;
+        if (_dateRange.Checked)
+        {
+            q.ModifiedFrom = _rangeStart.Value.Date;
+            q.ModifiedTo = _rangeEnd.Value.Date;
+        }
+
+        q.FileNames = _fileSpec.Text;
+        q.FileNamesAsRegex = _regexFileNames.Checked;
+        q.SearchInsideZipArchives = _searchInZip.Checked;
+        q.SkipBinaryFiles = _skipBinaryFiles.Checked;
+        q.OnlyBinaryFiles = _onlyBinaryFiles.Checked;
+        q.SkipByExtension = _skipByExtension.Checked;
+        q.SkippedExtensions = _skipExtensions.Text;
+
+        q.FolderName = _folders.Text;
+        q.IncludeSubfolders = _recurseFolders.Checked;
+        q.FolderNamesAsRegex = _regexFolderNames.Checked;
+        q.RegularExpressionOn = _regexPathName.Checked ? RegexTarget.PathName : RegexTarget.PathAndFileName;
+        q.BaseNameAsRegex = _baseNameRegex.Checked;
+        q.BaseNamePattern = _baseNamePattern.Text;
+        q.SkipFolders = _skipFolders.Checked;
+        q.SkippedFolders = _skipFolderNames.Text;
+        q.CountFilesFirst = _countFilesFirst.Checked;
+
+        v.KeepLinesBefore = (int)_keepLinesBefore.Value;
+        v.KeepLinesAfter = (int)_keepLinesAfter.Value;
+        v.ShowLinesBefore = (int)_showLinesBefore.Value;
+        v.ShowLinesAfter = (int)_showLinesAfter.Value;
+        v.LimitShowToKeep();
+    }
+
+    /// <summary>Exit and Start search: keep the edited values and close.</summary>
+    private void Accept(bool startSearch)
+    {
+        SaveTo(_query, _view);
+        StartSearchRequested = startSearch;
+        DialogResult = DialogResult.OK;
+    }
+
+    private static void FillDropDown(ComboBox combo, string current, IEnumerable<string> items, StringComparer comparer)
+    {
+        combo.Items.AddRange(SearchQueryText.DropDownItems(current, items, comparer).Cast<object>().ToArray());
+        combo.Text = current;
+    }
+
+    private static void SetNumber(NumericUpDown number, int value) =>
+        number.Value = Math.Clamp(value, (int)number.Minimum, (int)number.Maximum);
+
+    /// <summary>The shown lines can't be more than the kept lines.</summary>
+    private static void LimitShowToKeep(NumericUpDown show, NumericUpDown keep)
+    {
+        show.Maximum = keep.Value;
+        keep.ValueChanged += (_, _) => show.Maximum = keep.Value;
     }
 
     /// <summary>Title bar, button row and main combo boxes take the full width of the dialog.</summary>
@@ -239,12 +393,17 @@ internal sealed class SearchPropertiesForm : Form
         grid.Controls.Add(keep, 4, row);
     }
 
-    /// <summary>Cancel (Esc) and Exit close the dialog; Start search has no function yet ("*").</summary>
+    /// <summary>
+    /// Cancel (Esc) discards; Exit keeps the values; Start search (Enter) keeps them and asks for
+    /// a search, which has no function yet ("*").
+    /// </summary>
     private FlowLayoutPanel Buttons()
     {
         Button cancel = new() { Text = "Cancel", AutoSize = true, DialogResult = DialogResult.Cancel };
         Button startSearch = new() { Text = "*Start search", AutoSize = true };
-        Button exit = new() { Text = "Exit", AutoSize = true, DialogResult = DialogResult.OK };
+        Button exit = new() { Text = "Exit", AutoSize = true };
+        startSearch.Click += (_, _) => Accept(startSearch: true);
+        exit.Click += (_, _) => Accept(startSearch: false);
         CancelButton = cancel;
         AcceptButton = startSearch;
 

@@ -3,6 +3,7 @@ using GrepWinUi.App.Results;
 using GrepWinUi.App.Search;
 using GrepWinUi.Core;
 using GrepWinUi.Core.AppData.Config;
+using GrepWinUi.Core.AppData.Search;
 using Microsoft.Web.WebView2.Core;
 using SaveAndLoad;
 
@@ -12,15 +13,18 @@ namespace GrepWinUi.App;
 public sealed class MainForm : Form
 {
     private readonly ObjectStore _store;
+    private readonly SearchLists _lists;
     private Task<CoreWebView2Environment>? _webViewEnvironment;
     private int _resultFormCount;
 
     /// <summary>Creates the main window with its menu bar and status bar.</summary>
     /// <param name="config">Loaded user settings.</param>
-    /// <param name="store">Store used to save the settings.</param>
-    public MainForm(AppConfig config, ObjectStore store)
+    /// <param name="lists">Loaded recent lists of the search form.</param>
+    /// <param name="store">Store used to save the settings and lists.</param>
+    public MainForm(AppConfig config, SearchLists lists, ObjectStore store)
     {
         Config = config;
+        _lists = lists;
         _store = store;
 
         Version version = typeof(MainForm).Assembly.GetName().Version ?? new Version(0, 0, 0);
@@ -51,13 +55,13 @@ public sealed class MainForm : Form
     internal AppConfig Config { get; private set; }
 
     /// <summary>
-    /// File → New search query: opens a new result form with a copy of the view settings,
-    /// then its search properties dialog.
+    /// File → New search query: opens a new result form with the newest past query (or the defaults)
+    /// and a copy of the view settings, then its search properties dialog.
     /// </summary>
     private void NewSearch()
     {
         _resultFormCount++;
-        ResultForm form = new(Config.ResultView with { }, WebViewEnvironment(), _resultFormCount)
+        ResultForm form = new(_lists.StartQuery(Config), Config.ResultView with { }, WebViewEnvironment(), _resultFormCount)
         {
             MdiParent = this,
             Icon = Icon,
@@ -79,11 +83,29 @@ public sealed class MainForm : Form
         }
     }
 
-    /// <summary>Search properties dialog, modal over <paramref name="form"/>. Layout only for now (no data).</summary>
-    private static void ShowSearchProperties(ResultForm form)
+    /// <summary>
+    /// Search properties dialog, modal over <paramref name="form"/>, filled with its query and line counts.
+    /// Exit / Start search: the form takes over the edited values, the lists remember them and are saved
+    /// (Start search also remembers the whole query). Cancel changes nothing.
+    /// </summary>
+    private void ShowSearchProperties(ResultForm form)
     {
-        using SearchPropertiesForm dialog = new();
-        dialog.ShowDialog(form);
+        using SearchPropertiesForm dialog = new(form.Query, form.ViewOptions, _lists);
+        if (dialog.ShowDialog(form) != DialogResult.OK)
+        {
+            return;
+        }
+
+        form.ApplySearch(dialog.Query, dialog.ViewOptions);
+        _lists.Remember(dialog.Query, asPastQuery: dialog.StartSearchRequested);
+        try
+        {
+            _lists.Save(_store);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            MessageBox.Show(this, ex.Message, "Search lists not saved", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
     }
 
     /// <summary>

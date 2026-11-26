@@ -18,7 +18,10 @@ redesign from start with the help of AI
   For now it shows dummy content: a header line with view options (copied from the settings) and
   two panes, the file list on top and the matching lines below (drag the splitter between them).
   Needs the Microsoft Edge WebView2 Runtime (built into Windows 11).
-  Then the search properties dialog opens over the new window.
+  Then the search properties dialog opens over the new window. A new window starts with the
+  newest search from the list of past searches (or the standard values).
+  The window title shows `[number] search string :: file names :: folder`.
+  The header line's pre/post lines can't be more than the lines kept (set in the dialog).
 - **Program start:** without an open result window, a new empty one opens together with its
   search properties dialog.
 - **Search → Search (Ctrl+F):** opens the **Search properties** dialog over the active result window
@@ -26,9 +29,13 @@ redesign from start with the help of AI
   Folder name, each with a text box with dropdown; `[+]` shows more options for the section
   (the search string options are shown from the start, in four columns). The dialog can be
   resized; the text boxes grow with its width, and opening a section makes the dialog taller.
-  At the bottom: lines before / after a match to show and to keep. **Cancel** (Esc) and **Exit**
-  close the dialog. For now it is the layout only: the inputs are empty, nothing is saved and
-  **Start search** has no function yet. It already holds more options than the old program
+  At the bottom: lines before / after a match to show and to keep (shown ≤ kept); they are the same
+  values as the pre/post lines in the window's header line.
+  The dialog shows the search of its result window; the dropdowns list the last used search strings,
+  file names and folders (saved in `%AppData%\GrepWinUi\`).
+  **Exit** keeps the changes for the window and remembers the texts in the dropdown lists;
+  **Start search** (Enter) also adds the whole search to the list of past searches (searching itself
+  is not there yet); **Cancel** (Esc) discards the changes. It already holds more options than the old program
   (file date filter, skip by extension, skip folders, fixed-width and delimited fields, …), to be reviewed.
   Parameter names that have no effect yet are struck through.
 - **Windows → Cascade / Tile horizontal / Tile vertical / Arrange Icons:** arranges the result windows.

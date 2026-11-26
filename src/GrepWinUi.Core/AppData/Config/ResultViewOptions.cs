@@ -38,4 +38,11 @@ public sealed record ResultViewOptions
 
     /// <summary>Keep double blanks in lines (false: reduce them to one).</summary>
     public bool ShowDoubleBlanks { get; set; } = false;
+
+    /// <summary>Shown lines can't be more than the kept (prepared) lines: lowers the Show values if needed.</summary>
+    public void LimitShowToKeep()
+    {
+        ShowLinesBefore = Math.Clamp(ShowLinesBefore, 0, Math.Max(0, KeepLinesBefore));
+        ShowLinesAfter = Math.Clamp(ShowLinesAfter, 0, Math.Max(0, KeepLinesAfter));
+    }
 }

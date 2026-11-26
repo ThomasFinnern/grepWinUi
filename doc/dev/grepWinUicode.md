@@ -97,6 +97,15 @@ No admin rights needed: nothing is written next to the exe.
 - Recent lists: `SearchStringList` (35, case matters), `FileNamesList` (35, ignore case),
   `FolderNameList` (40, ignore case), `SearchQueryList` (15, `SearchQueryComparer`).
   Max counts as in the old program.
+- `SearchLists`: the four lists together. `Load(store, out problems)` (never throws),
+  `Save(store)` (throws `IOException` / `UnauthorizedAccessException`),
+  `Remember(query, asPastQuery)` (non-empty search string / file names / folder on top of their
+  lists; with `asPastQuery` also a copy of the whole query), `StartQuery(config)` (copy of the newest
+  past query, else `SearchQuery.CreateDefault`).
+- `SearchQueryText`: `Title(query)` ("search :: files :: folder", folder over 32 characters →
+  "..." + last 30), `DropDownItems(current, items, comparer)` (current value first, no duplicates),
+  `HasFileNameOptions` / `HasFolderOptions` (an option differs from its default → `[+]` starts open).
+- `ResultViewOptions.LimitShowToKeep()`: shown lines ≤ kept lines.
 
 ### Other
 - `AppInfo`: product name, main window title (`grepWinUi 1.2.3`).
@@ -105,13 +114,15 @@ No admin rights needed: nothing is written next to the exe.
 ## 5. App
 
 ### Program start
-`Program.Main` loads `AppConfig` (shows a problem text if any) and runs `MainForm`.
+`Program.Main` loads `AppConfig` and the `SearchLists` (shows problem texts if any) and runs `MainForm`.
 When `MainForm` is first shown and no result form is open, it opens a new empty result form
 with the search properties dialog.
 
 ### MainForm (MDI container)
-- `NewSearch()` (File → New search query, Ctrl+N): new `ResultForm` with a copy of
-  `config.ResultView`, then the search properties dialog over it.
+- `NewSearch()` (File → New search query, Ctrl+N): new `ResultForm` with `lists.StartQuery(config)`
+  and a copy of `config.ResultView`, then the search properties dialog over it.
+- `ShowSearchProperties(form)`: dialog with the form's `Query`, `ViewOptions` and the lists.
+  On OK: `form.ApplySearch(...)`, `lists.Remember(...)`, `lists.Save(...)` (warning box on error).
 - `EditSearch()` (Search → Search, Ctrl+F): dialog over the active result form; without one → `NewSearch()`.
 - `OpenSettings()` (Options → Settings): `SettingsForm` on a copy; saves on OK.
 - Windows menu arranges the MDI children; File → Exit closes.
@@ -131,23 +142,32 @@ Works on `AppConfig.Copy()`; `Result` is set on Save.
 ### Results/ResultForm (MDI child)
 - Header line `ViewOptionsBar` (pre/post lines + view checkboxes), file list pane on top,
   matching lines pane below (two WebView2 in a `SplitContainer`).
-- Own `ViewOptions` (copy of the settings). Shows `DummyResultHtml` for now; dummy window title.
+- Own `Query` and `ViewOptions` (copy of the settings). `ApplySearch(query, view)` takes over the
+  dialog's values. Window title `[n] ` + `SearchQueryText.Title(Query)`.
+- `ViewOptionsBar.Bind(view)`: shows the values and writes every change back into `view`
+  (a `_loading` flag stops write-back while loading). Pre/post maximum = keep values.
+- Shows `DummyResultHtml` for now.
 
 ### Search/SearchPropertiesForm (modal dialog)
 - Opened with `ShowDialog(resultForm)`, centered over the result form.
+- Constructor `(query, view, lists)`: works on copies; `LoadFrom` / `SaveTo` map every control to
+  `SearchQuery` / `ResultViewOptions`. After OK: `Query`, `ViewOptions`, `StartSearchRequested`.
+- Dropdowns: current value first, then the list items. Show ≤ keep (`Maximum` follows keep).
 - Layout (built in code, `SearchFormControls` helpers):
   green title bar; sections **Search string**, **File names**, **Folder name**, each with a bold
   title, a `[+]` toggle for its options, a combo box and a `...` button; then
   "Count files first (progress in %)", the lines before/after a match (show / keep),
   and the buttons Cancel, Start search, Exit.
 - Search string options: four columns (3 × 3 checkboxes + fixed-width / delimited / file date with
-  their inputs, shown only when ticked). Open at start; the other sections start closed.
+  their inputs, shown only when ticked). Always open at start; the other sections start open only
+  when one of their options differs from its default.
 - File names options: three columns, skip-by-extension list below.
 - Folder options: two columns; the "Regular expression on:" line (path and file name / path name)
   directly below "Folder names as RegEx".
 - Resizable: title bar, combo boxes and buttons follow the width; opening a section grows the
   dialog up to the screen height; scroll bars when smaller than the content.
-- Cancel (Esc) and Exit close; Start search and `...` have no function yet (`*`).
+- Cancel (Esc) discards; Exit and Start search (Enter) keep the values (Start search also sets
+  `StartSearchRequested`; searching itself is missing, so it keeps its `*`). `...` has no function yet.
 - **`NoEffect(...)`**: parameter names without effect are struck through; remove it in the step
   that makes the parameter work.
 
@@ -159,17 +179,21 @@ Works on `AppConfig.Copy()`; `Result` is set on Save.
   - Planned: when the last forms are reopened on start, the dialog opens for the last active
     result form if Settings "Open search form" is set.
   - Planned (old program): Search in Files = Search with "Only in files of current result" ticked.
-- **Dialog buttons** (from the old program, planned for step 14): Start search (Enter) writes back,
-  saves the lists and searches; Exit writes back without searching; Cancel (Esc) discards.
+- **Dialog buttons** (as in the old program): Exit writes back and puts search string, file names
+  and folder on top of their lists; Start search (Enter) does the same and also adds the whole query
+  to the past queries (later: starts the search); Cancel (Esc) discards. Lists are saved after each OK.
+- **New result form** starts with a copy of the newest past query (old program: last used query),
+  else the defaults.
+- **Skip binary files / Only binary files** stay independent checkboxes (decided in step 14).
 - **Line counts** are not part of `SearchQuery`. They live in the result form's `ViewOptions`
   (copied from the settings when the form is created). The dialog's show/keep values and the
-  header line's pre/post lines edit the same values. Old program: pre/post maximum = keep values.
+  header line's pre/post lines edit the same values. Shown lines can't exceed kept lines (as in the old program).
 - **Count files first** starts with the Settings value and can be changed per search.
 - **Same search** = same search string + file names + folder name: the user only sees an
   abbreviation in the list, so variants with other options can't be told apart; the newest
   options replace the older entry.
-- **`[+]`** starts closed except for the search string section (old program: open when an option
-  of the section differs from its default — to decide in step 14).
+- **`[+]`**: search string section always open; file names and folder sections open when one of
+  their options differs from its default (as in the old program).
 
 ## 7. Still to build (from the old program description)
 

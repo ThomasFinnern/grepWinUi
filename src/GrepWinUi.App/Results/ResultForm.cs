@@ -1,4 +1,5 @@
 using GrepWinUi.Core.AppData.Config;
+using GrepWinUi.Core.AppData.Search;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
 
@@ -13,21 +14,24 @@ internal sealed class ResultForm : Form
     private readonly WebView2 _fileListPane = Pane();
     private readonly WebView2 _matchingLinesPane = Pane();
     private readonly Task<CoreWebView2Environment> _webViewEnvironment;
+    private readonly ViewOptionsBar _optionsBar = new();
+    private readonly int _number;
 
     /// <summary>Creates a result form.</summary>
+    /// <param name="query">Own search query of this form.</param>
     /// <param name="viewOptions">Own copy of the view options (taken from the config).</param>
     /// <param name="webViewEnvironment">Shared WebView2 environment (user data in the user profile).</param>
-    /// <param name="number">Running number, shown in the dummy title.</param>
-    public ResultForm(ResultViewOptions viewOptions, Task<CoreWebView2Environment> webViewEnvironment, int number)
+    /// <param name="number">Running number, shown in front of the title.</param>
+    public ResultForm(SearchQuery query, ResultViewOptions viewOptions, Task<CoreWebView2Environment> webViewEnvironment, int number)
     {
+        Query = query;
         ViewOptions = viewOptions;
         _webViewEnvironment = webViewEnvironment;
+        _number = number;
 
-        Text = $"[{number}] [public|protected|private]\\s+function :: *controller.php :: e:\\wamp64\\www\\api_6x\\api\\components";
+        UpdateTitle();
         Size = new Size(900, 600);
-
-        ViewOptionsBar optionsBar = new();
-        optionsBar.LoadFrom(ViewOptions);
+        _optionsBar.Bind(ViewOptions);
 
         SplitContainer panes = new()
         {
@@ -39,13 +43,27 @@ internal sealed class ResultForm : Form
         panes.Panel2.Controls.Add(_matchingLinesPane);
 
         Controls.Add(panes);
-        Controls.Add(optionsBar);
+        Controls.Add(_optionsBar);
 
         Load += async (_, _) => await ShowDummyContentAsync();
     }
 
-    /// <summary>View options of this form (independent copy of the config values).</summary>
-    public ResultViewOptions ViewOptions { get; }
+    /// <summary>Search query of this form.</summary>
+    public SearchQuery Query { get; private set; }
+
+    /// <summary>View options of this form (independent copy of the config values); the header line edits them.</summary>
+    public ResultViewOptions ViewOptions { get; private set; }
+
+    /// <summary>Takes over the edited query and view options (from the search properties dialog).</summary>
+    public void ApplySearch(SearchQuery query, ResultViewOptions viewOptions)
+    {
+        Query = query;
+        ViewOptions = viewOptions;
+        _optionsBar.Bind(ViewOptions);
+        UpdateTitle();
+    }
+
+    private void UpdateTitle() => Text = $"[{_number}] {SearchQueryText.Title(Query)}";
 
     /// <summary>Result pane; background like the form (no white flash before the page is shown).</summary>
     private static WebView2 Pane() => new() { Dock = DockStyle.Fill, DefaultBackgroundColor = SystemColors.Control };
