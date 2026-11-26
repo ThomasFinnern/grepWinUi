@@ -83,13 +83,20 @@ tests/lib_RecentList.Tests/  xUnit tests for lib_RecentList
     a test checks it equals the built-in defaults, so keep both in sync.
   - `AppData/Session/`: state that changes often and must survive a restart
     (`LastUsedFiles` → `LastUsed.json`: last query/result/HTML file, fallback to the newest one).
+  - `AppData/Search/`: `SearchQuery` (all inputs of the search form, no line counts; `Copy()`,
+    `CreateDefault(config)`), `SearchQueryComparer` (same search = same search string,
+    file names and folder name; options not compared, so newer options replace older ones) and the recent-first lists
+    `SearchStringList`, `FileNamesList`, `FolderNameList` (35/35/40, file and folder names ignore case)
+    and `SearchQueryList` (past queries).
   - `AppData/CommandLine/`: command line item definitions.
 - A new result form starts with a **copy** of the current config settings
   (`config.ResultView with { }`), incl. the Keep lines (prepared lines before/after a match).
   The reusable mechanics stay in the `lib_` projects. No global "main" object: `Program.cs` / `MainForm`
   create the store and the config and pass them on.
 - Before each feature step: read the matching code in `..\netGrepWin` (read only)
-  and add short notes to `doc/netGrepWin/`.
+  and add short notes to `doc/netGrepWin/` (old program only).
+- Developer documentation of grepWinUi: `doc/dev/grepWinUicode.md` (structure, classes, files on disk,
+  behaviour decisions, what is still to build). Update it in every step that changes code or decisions.
 
 ## UI spec: status bar (main window)
 Fields from left to right:
@@ -160,7 +167,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–12 and 13a are done.
+One step = one session. Steps 1–12, 13a and 13b are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 1. [x] Install .NET SDK (11.0.100 installed)
 1. [x] Install VS Code "C#" extension
@@ -181,10 +188,12 @@ One step = one session. Steps 1–12 and 13a are done.
        `frmSearchProperties`; opened with Search → Search (Ctrl+F) as a modal dialog over the active
        result form (without one, a new result form is created first); File → New and program start
        without a result form: new empty result form with the dialog open; empty dropdowns, no data, no search
-1. [ ] 13b Search query model: a `SearchQuery` class in Core with exactly the fields of the form;
+1. [x] 13b Search query model: a `SearchQuery` class in Core with exactly the fields of the form;
        recent-first lists (search strings, file specs, folders, past queries); tests
 1. [ ] 14 Connect form and model: the form is filled with the active result form's search data
        and writes the changes back to it; dropdowns filled from the lists; no search.
+       Line counts: the dialog's show/keep values and the header line's pre/post lines edit the same
+       `ViewOptions` of the result form (copied from the settings when the form is created).
 1. [ ] Options menu: "Search string lists", "Search files spec. list", "Search folder list"
        (edit the recent-first lists)
 1. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
@@ -212,4 +221,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 13b: Search query model (`SearchQuery` in Core with the fields of the search form, recent-first lists).
+Step 14: Connect search form and model (fill the form from the active result form, write back, dropdowns from the lists).

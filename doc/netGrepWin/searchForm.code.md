@@ -1,7 +1,7 @@
 # Old search properties form (`frmSearchProperties`)
 
 Notes from `..\netGrepWin\NetGrepWin\frmSearchProperties.cs` (+ Designer) and its callers.
-Screenshot: `searchForm.png`.
+Screenshot: `searchForm.png`. Decisions for grepWinUi: [doc/dev/grepWinUicode.md](../dev/grepWinUicode.md).
 
 ## How the form is opened (from outside the result form)
 
@@ -21,7 +21,7 @@ Screenshot: `searchForm.png`.
   - **Search → Search in Files**: like Search, but sets `bSearchInFoundFiles = true` first;
     without an active result form only a message box.
   - **Main window `Shown`** (program start): opens the dialog for the last active result form,
-    if there is one. Otherwise (decided for grepWinUi): a new empty result form with the dialog open.
+    if there is one. Otherwise this handler does nothing.
   - **Ctrl+F inside the result form's HTML panes**: opens the dialog directly.
 
 ## Buttons and keys

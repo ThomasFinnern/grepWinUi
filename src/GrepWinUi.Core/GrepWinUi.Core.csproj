@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\lib_RecentList\lib_RecentList.csproj" />
     <ProjectReference Include="..\lib_SaveAndLoad\lib_SaveAndLoad.csproj" />
   </ItemGroup>
 
