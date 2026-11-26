@@ -43,6 +43,37 @@ public sealed class SearchResultFileTests : IDisposable
     }
 
     [Fact]
+    public void SaveAndLoad_KeepsContextLines()
+    {
+        string path = Path.Combine(_root, "r" + SearchResultFile.Extension);
+        SearchResult saved = Sample();
+
+        SearchResultFile.Save(saved, path);
+        SearchResult loaded = SearchResultFile.Load(path);
+
+        Assert.Equal([new ContextLine(11, "before"), new ContextLine(13, "after")], loaded.Files[0].ContextLines);
+        Assert.Empty(loaded.Files[1].ContextLines);
+    }
+
+    [Fact]
+    public void Load_FileWithoutContextLines_EmptyList()
+    {
+        string path = Path.Combine(_root, "r" + SearchResultFile.Extension);
+        SearchResultFile.Save(Sample(), path);
+        string json = File.ReadAllText(path);
+        int start = json.IndexOf("\"ContextLines\"", StringComparison.Ordinal);
+        Assert.True(start > 0);
+        // Remove every "ContextLines": [...] entry, as in files saved before step 22.
+        string old = System.Text.RegularExpressions.Regex.Replace(json, @",\s*""ContextLines"":\s*\[[^\]]*\]", "");
+        File.WriteAllText(path, old);
+
+        SearchResult loaded = SearchResultFile.Load(path);
+
+        Assert.DoesNotContain("ContextLines", old);
+        Assert.All(loaded.Files, file => Assert.Empty(file.ContextLines));
+    }
+
+    [Fact]
     public void Save_WritesHeader()
     {
         string path = Path.Combine(_root, "r" + SearchResultFile.Extension);
@@ -92,7 +123,8 @@ public sealed class SearchResultFileTests : IDisposable
     private static SearchResult Sample() => new(
         new SearchQuery { SearchString = "foo", FileNames = "*.cs", FolderName = @"c:\src", IncludeSubfolders = false },
         [
-            new FileResult(@"c:\src\a.cs", [new LineMatch(12, "x foo foo", [new Hit(2, 3), new Hit(6, 3)])]),
+            new FileResult(@"c:\src\a.cs", [new LineMatch(12, "x foo foo", [new Hit(2, 3), new Hit(6, 3)])],
+                [new ContextLine(11, "before"), new ContextLine(13, "after")]),
             new FileResult(@"c:\src\b.cs", [new LineMatch(1, "foo", [new Hit(0, 3)])]),
         ],
         FilesSearched: 7,

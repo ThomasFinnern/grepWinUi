@@ -21,11 +21,14 @@ public static class SearchEngine
     /// <param name="query">What and where to search; a copy is kept in the result.</param>
     /// <param name="progress">Gets a report at most every <see cref="ProgressInterval"/> and at the end.</param>
     /// <param name="cancel">Stops the search; the result then has <see cref="SearchResult.Cancelled"/> set.</param>
-    public static Task<SearchResult> RunAsync(SearchQuery query, IProgress<SearchProgress>? progress, CancellationToken cancel) =>
-        Task.Run(() => Run(query.Copy(), progress, cancel), CancellationToken.None);
+    /// <param name="keep">Lines kept before / after each matching line (<see cref="FileResult.ContextLines"/>).</param>
+    public static Task<SearchResult> RunAsync(
+        SearchQuery query, IProgress<SearchProgress>? progress, CancellationToken cancel, KeepLines keep = default) =>
+        Task.Run(() => Run(query.Copy(), progress, cancel, keep), CancellationToken.None);
 
     /// <summary>Searches on the calling thread (used by <see cref="RunAsync"/> and tests).</summary>
-    public static SearchResult Run(SearchQuery query, IProgress<SearchProgress>? progress, CancellationToken cancel)
+    public static SearchResult Run(
+        SearchQuery query, IProgress<SearchProgress>? progress, CancellationToken cancel, KeepLines keep = default)
     {
         Stopwatch time = Stopwatch.StartNew();
         if (query.SearchString.Length == 0)
@@ -71,7 +74,7 @@ public static class SearchEngine
                 progress?.Report(new SearchProgress(filesSearched, finder.FoldersSearched, files.Count, path, totalFiles));
             }
 
-            FileResult? file = SearchFile(path, matcher, problems, cancel);
+            FileResult? file = SearchFile(path, matcher, problems, cancel, keep);
             if (file is not null)
             {
                 files.Add(file);
@@ -119,11 +122,16 @@ public static class SearchEngine
     /// Matching lines of one file, or null when it has none. Read as UTF-8; UTF-16 / UTF-32 files are
     /// detected by their byte order mark. An unreadable file, or one where the regular expression takes
     /// too long for a line (<see cref="LineMatcher.RegexTimeout"/>), is noted in <paramref name="problems"/>
-    /// and gives null.
+    /// and gives null. Keeps up to <paramref name="keep"/> lines before / after each matching line:
+    /// the last lines before wait in a small queue and are only stored when a match follows.
     /// </summary>
-    public static FileResult? SearchFile(string path, LineMatcher matcher, List<string> problems, CancellationToken cancel)
+    public static FileResult? SearchFile(
+        string path, LineMatcher matcher, List<string> problems, CancellationToken cancel, KeepLines keep = default)
     {
         List<LineMatch> lines = [];
+        List<ContextLine> context = [];
+        Queue<ContextLine> waiting = new();
+        int afterLeft = 0;
         try
         {
             using StreamReader reader = new(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
@@ -135,6 +143,22 @@ public static class SearchEngine
                 if (hits.Count > 0)
                 {
                     lines.Add(new LineMatch(lineNumber, line, hits));
+                    context.AddRange(waiting);
+                    waiting.Clear();
+                    afterLeft = keep.After;
+                }
+                else if (afterLeft > 0)
+                {
+                    context.Add(new ContextLine(lineNumber, line));
+                    afterLeft--;
+                }
+                else if (keep.Before > 0)
+                {
+                    waiting.Enqueue(new ContextLine(lineNumber, line));
+                    if (waiting.Count > keep.Before)
+                    {
+                        waiting.Dequeue();
+                    }
                 }
                 if (cancel.IsCancellationRequested)
                 {
@@ -152,6 +176,6 @@ public static class SearchEngine
             problems.Add($"Regular expression too slow, file skipped: '{path}'");
             return null;
         }
-        return lines.Count > 0 ? new FileResult(path, lines) : null;
+        return lines.Count > 0 ? new FileResult(path, lines, context) : null;
     }
 }

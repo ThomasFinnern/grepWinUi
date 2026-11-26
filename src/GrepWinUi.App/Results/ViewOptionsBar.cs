@@ -67,11 +67,15 @@ internal sealed class ViewOptionsBar : FlowLayoutPanel
         _loading = false;
     }
 
+    /// <summary>Raised after a change of the controls was written back into the bound view options.</summary>
+    public event EventHandler? ViewChanged;
+
     private void WriteBack()
     {
         if (!_loading && _view is not null)
         {
             SaveTo(_view);
+            ViewChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 

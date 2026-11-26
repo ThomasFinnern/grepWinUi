@@ -136,8 +136,10 @@ No admin rights needed: nothing is written next to the exe.
 
 ### Search (namespace `GrepWinUi.Core.Search`, step 17: basic version)
 - Result model (records): `SearchResult(Query, Files, FilesSearched, FoldersSearched, MatchCount,
-  Duration, Cancelled, Problems)`, `FileResult(Path, Lines)`, `LineMatch(LineNumber, Text, Hits)`
+  Duration, Cancelled, Problems)`, `FileResult(Path, Lines, ContextLines)`, `LineMatch(LineNumber, Text, Hits)`
   (line numbers from 1), `Hit(Start, Length)` (0-based, every hit of a line),
+  `ContextLine(LineNumber, Text)` (step 22: non-matching line kept near a match; `ContextLines` null →
+  empty list, so result files saved before step 22 still load), `KeepLines(Before, After)`,
   `SearchProgress(FilesSearched, FoldersSearched, FilesMatched, CurrentFile)`.
 - `FileFinder`: `Find(folder, fileNames, includeSubfolders, cancel)` — one folder (surrounding quotes
   removed), file names = space separated Win32 wildcards (`FileSystemName.MatchesWin32Expression`,
@@ -162,6 +164,10 @@ No admin rights needed: nothing is written next to the exe.
   UTF-8 (`StreamReader`, UTF-16/32 detected by byte order mark; ANSI detection: step 25; binary files
   are read like text until step 25). Unreadable file → `Problems`. Progress at most every 100 ms and
   once at the end. Cancel → result so far with `Cancelled = true`, no exception.
+  Step 22: `Run` / `RunAsync` / `SearchFile` take `KeepLines keep` (default none; the result form passes
+  its `ViewOptions.KeepLinesBefore/After`). While reading a file the last `keep.Before` lines wait in a
+  queue; a match moves them to the file's `ContextLines`, then the next `keep.After` non-matching lines
+  are stored. Each line once, only for files with a match (old program: state machine with dictionaries).
 - `SearchResultFile`: `Save(result, path)` (indented JSON with header, temp file then replace),
   `Load(path)` (throws `InvalidDataException` for broken files, query files or other JSON),
   `WithExtension(path)` (adds `.result.json`, replaces a plain `.json`). The result records are
@@ -180,9 +186,14 @@ No admin rights needed: nothing is written next to the exe.
     (classes `FileName`, `Folder`, `Matches` on `th` and `td`; every column is as small as its content and
     left aligned, also columns added later; the file name
     is in a `div` with `title` = full name, cut with "…" beyond `max-width: 30em`) or `p.NotFound` "Found no matches for '…'".
-  - `MatchingLines(result, css, background)`: `div.HeaderFoundToken` h1 "Lines with '…'"; per file
+  - `MatchingLines(result, view, css, background)`: `div.HeaderFoundToken` h1 "Lines with '…'"; per file
     `div.FileNameTitle` (full path), per line `div.Line` = `span.LineNumber` ("000012: ", `LineNumber(n)`,
     six digits as in the old program) + text with hits in `span.Token` (`MarkHits(line)`); or `p.NotFound`.
+    Step 22: the lines come from `ShownLines(file, before, after)` (`view.ShowLinesBefore/After`): per match
+    up to `before` kept lines not shown yet, the match, up to `after` kept lines before the next match;
+    kept lines as `div.Line.ContextLine` (no hits); `div.Gap` before a line that doesn't follow the previous
+    shown line, only when before/after > 0 (old program: `<br>` after every match line, post lines not
+    cut at the next match). `MaxLines` counts all shown lines. CSS `.ContextLine` (grey), `.Gap` (0.8em).
   - `Hint(text, css, background)`; `Summary(result)` ("In files '…': found n matches in n files from n
     files searched in folder '…' (0.4 s)", plus " — cancelled").
   - All text HTML encoded; at most `MaxLines` (5000) lines, because `NavigateToString` takes only about 2 MB.
@@ -282,6 +293,9 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   dialog's values. Window title `[n] ` + `SearchQueryText.Title(Query)`.
 - `ViewOptionsBar.Bind(view)`: shows the values and writes every change back into `view`
   (a `_loading` flag stops write-back while loading). Pre/post maximum = keep values.
+  `ViewChanged` after each write-back: `ResultForm.ShowMatchingLinesAgainAsync()` builds only the
+  matching lines pane again from `Result` (no search; nothing while searching). `ApplySearch` does the
+  same when the dialog changed the show values.
 - `InitPanesAsync()` (on `Load`, kept as `_panesReady`): starts both WebView2 panes with the shared
   environment and shows a hint ("No search yet …"); a missing WebView2 runtime → message box.
 - `Result` (last finished or loaded result, null while searching) and `ResultChanged`;
@@ -355,6 +369,7 @@ program, Search string token, File name token, Folder name token. Works on `AppC
 - **Line counts** are not part of `SearchQuery`. They live in the result form's `ViewOptions`
   (copied from the settings when the form is created). The dialog's show/keep values and the
   header line's pre/post lines edit the same values. Shown lines can't exceed kept lines (as in the old program).
+  Keep values act on the next search; show values only change the view (step 22).
 - **Count files first** starts with the Settings value and can be changed per search.
   Step 20 (new, the old program had only an unused checkbox): `SearchEngine` first collects all found
   files in a list (`CountFiles`, progress with `Counting = true` and the files counted so far in

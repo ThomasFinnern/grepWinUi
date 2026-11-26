@@ -21,10 +21,32 @@ public sealed record SearchResult(
     bool Cancelled,
     IReadOnlyList<string> Problems);
 
-/// <summary>A file with its matching lines.</summary>
+/// <summary>A file with its matching lines and the lines kept around them.</summary>
 /// <param name="Path">Full path of the file.</param>
 /// <param name="Lines">Matching lines in file order.</param>
-public sealed record FileResult(string Path, IReadOnlyList<LineMatch> Lines);
+/// <param name="ContextLines">
+/// Non-matching lines kept before / after the matching lines (<see cref="KeepLines"/>), in file order,
+/// each line once; null gives an empty list (e.g. result files saved before step 22).
+/// </param>
+public sealed record FileResult(string Path, IReadOnlyList<LineMatch> Lines, IReadOnlyList<ContextLine>? ContextLines = null)
+{
+    /// <summary>Non-matching lines kept before / after the matching lines, in file order.</summary>
+    public IReadOnlyList<ContextLine> ContextLines { get; init; } = ContextLines ?? [];
+}
+
+/// <summary>A non-matching line kept near a matching line (shown as line before / after a match).</summary>
+/// <param name="LineNumber">Line number, the first line is 1.</param>
+/// <param name="Text">Text of the line.</param>
+public sealed record ContextLine(int LineNumber, string Text);
+
+/// <summary>Number of lines kept (prepared) before and after each matching line while searching.</summary>
+/// <param name="Before">Lines kept before a matching line.</param>
+/// <param name="After">Lines kept after a matching line.</param>
+public readonly record struct KeepLines(int Before, int After)
+{
+    /// <summary>Keep no lines.</summary>
+    public static KeepLines None => default;
+}
 
 /// <summary>A matching line.</summary>
 /// <param name="LineNumber">Line number, the first line is 1.</param>

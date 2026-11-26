@@ -61,6 +61,7 @@ internal sealed class ResultForm : Form
         _matchingLinesPane.KeyDown += OnPaneKeyDown;
         Load += (_, _) => _panesReady = InitPanesAsync();
         _statusTimer.Tick += (_, _) => _updateRunningStatus?.Invoke();
+        _optionsBar.ViewChanged += (_, _) => _ = ShowMatchingLinesAgainAsync();
     }
 
     /// <summary>
@@ -90,13 +91,35 @@ internal sealed class ResultForm : Form
     /// <summary>View options of this form (independent copy of the config values); the header line edits them.</summary>
     public ResultViewOptions ViewOptions { get; private set; }
 
-    /// <summary>Takes over the edited query and view options (from the search properties dialog).</summary>
+    /// <summary>
+    /// Takes over the edited query and view options (from the search properties dialog); a shown result is
+    /// shown again when the lines before / after changed.
+    /// </summary>
     public void ApplySearch(SearchQuery query, ResultViewOptions viewOptions)
     {
+        bool linesChanged = viewOptions.ShowLinesBefore != ViewOptions.ShowLinesBefore
+            || viewOptions.ShowLinesAfter != ViewOptions.ShowLinesAfter;
         Query = query;
         ViewOptions = viewOptions;
         _optionsBar.Bind(ViewOptions);
         UpdateTitle();
+        if (linesChanged)
+        {
+            _ = ShowMatchingLinesAgainAsync();
+        }
+    }
+
+    /// <summary>
+    /// Header line or dialog changed the view: builds the matching lines pane again from the shown result,
+    /// without searching (nothing while searching or without a result).
+    /// </summary>
+    private async Task ShowMatchingLinesAgainAsync()
+    {
+        if (Result is not SearchResult result || IsSearching || !await _panesReady || IsDisposed)
+        {
+            return;
+        }
+        _matchingLinesPane.NavigateToString(MatchingLinesPage(result));
     }
 
     private void UpdateTitle() => Text = $"[{_number}] {SearchQueryText.Title(Query)}";
@@ -145,7 +168,8 @@ internal sealed class ResultForm : Form
         SearchStatus endStatus;
         try
         {
-            result = await SearchEngine.RunAsync(query, progress, search.Token);
+            KeepLines keep = new(ViewOptions.KeepLinesBefore, ViewOptions.KeepLinesAfter);
+            result = await SearchEngine.RunAsync(query, progress, search.Token, keep);
             fileList = FileListPage(result);
             matchingLines = MatchingLinesPage(result);
             endStatus = SearchStatus.Done(result);
@@ -247,7 +271,7 @@ internal sealed class ResultForm : Form
         ResultPageHtml.FileList(result, Css(ResultCss.FileListFileName), Background);
 
     private string MatchingLinesPage(SearchResult result) =>
-        ResultPageHtml.MatchingLines(result, Css(ResultCss.MatchingLinesFileName), Background);
+        ResultPageHtml.MatchingLines(result, ViewOptions, Css(ResultCss.MatchingLinesFileName), Background);
 
     private string HintPage(string cssFileName, string text) => ResultPageHtml.Hint(text, Css(cssFileName), Background);
 

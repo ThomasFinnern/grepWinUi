@@ -460,10 +460,10 @@ internal sealed class SearchPropertiesForm : Form
 
     private static void AddLineRow(TableLayoutPanel grid, int row, string title, NumericUpDown show, NumericUpDown keep)
     {
-        grid.Controls.Add(NoEffect(Caption(title)), 0, row);
-        grid.Controls.Add(NoEffect(Caption("show")), 1, row);
+        grid.Controls.Add(Caption(title), 0, row);
+        grid.Controls.Add(Caption("show"), 1, row);
         grid.Controls.Add(show, 2, row);
-        grid.Controls.Add(NoEffect(Caption("keep")), 3, row);
+        grid.Controls.Add(Caption("keep"), 3, row);
         grid.Controls.Add(keep, 4, row);
     }
 

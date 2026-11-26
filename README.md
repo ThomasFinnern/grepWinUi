@@ -33,6 +33,12 @@ redesign from start with the help of AI
   newest search from the list of past searches (or the standard values).
   The window title shows `[number] search string :: file names :: folder`.
   The header line's pre/post lines can't be more than the lines kept (set in the dialog).
+- **Lines before / after a match:** in the search properties dialog, "keep" sets how many lines
+  before / after each matching line the search keeps; "show" (same as **Pre. lines** / **Post. lines**
+  in the window's header line) sets how many of them the matching lines pane shows, in grey. Changing
+  Pre. / Post. lines shows the result again at once, without searching. Each line is shown once; groups
+  of lines that don't follow each other get a small space between them. A bigger "keep" value takes
+  effect with the next search. Saved results (`*.result.json`) include the kept lines.
 - **File → Open search query (Ctrl+O):** opens a saved search query file in a new result window,
   together with its search properties dialog.
 - **File → Load search query:** loads a saved search query into the active result window

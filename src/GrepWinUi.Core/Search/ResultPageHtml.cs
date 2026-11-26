@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using GrepWinUi.Core.AppData.Config;
 
 namespace GrepWinUi.Core.Search;
 
@@ -55,9 +56,13 @@ public static class ResultPageHtml
 
     /// <summary>
     /// Matching lines pane: header, then per file its path (<c>FileNameTitle</c>) and its lines
-    /// (<c>LineNumber</c> + text with <c>Token</c> hits), or "Found no matches".
+    /// (<c>LineNumber</c> + text with <c>Token</c> hits), or "Found no matches". Around each matching line
+    /// up to <see cref="ResultViewOptions.ShowLinesBefore"/> / <see cref="ResultViewOptions.ShowLinesAfter"/>
+    /// kept lines (<c>Line ContextLine</c>), each line once; lines after a match stop at the next match.
+    /// Groups of lines that don't follow each other are parted by <c>Gap</c> (only when lines before /
+    /// after are shown).
     /// </summary>
-    public static string MatchingLines(SearchResult result, string css, string background)
+    public static string MatchingLines(SearchResult result, ResultViewOptions view, string css, string background)
     {
         StringBuilder body = new();
         body.Append("<div class=\"HeaderFoundToken\"><h1>Lines with '")
@@ -72,18 +77,72 @@ public static class ResultPageHtml
         foreach (FileResult file in result.Files)
         {
             body.Append("<div class=\"FileNameTitle\">").Append(Encode(file.Path)).Append("</div>");
-            foreach (LineMatch line in file.Lines)
+            foreach (ShownLine shown in ShownLines(file, Math.Max(0, view.ShowLinesBefore), Math.Max(0, view.ShowLinesAfter)))
             {
+                if (shown.GapBefore)
+                {
+                    body.Append("<div class=\"Gap\"></div>");
+                }
                 if (written++ == MaxLines)
                 {
                     body.Append($"<p class=\"NotFound\">… only the first {MaxLines} lines are shown.</p>");
                     return Page(css, background, body.ToString());
                 }
-                body.Append("<div class=\"Line\"><span class=\"LineNumber\">").Append(LineNumber(line.LineNumber))
-                    .Append(": </span>").Append(MarkHits(line)).Append("</div>");
+                body.Append(shown.Match is LineMatch match
+                    ? $"<div class=\"Line\"><span class=\"LineNumber\">{LineNumber(shown.LineNumber)}: </span>{MarkHits(match)}</div>"
+                    : $"<div class=\"Line ContextLine\"><span class=\"LineNumber\">{LineNumber(shown.LineNumber)}: </span>{Encode(shown.Text)}</div>");
             }
         }
         return Page(css, background, body.ToString());
+    }
+
+    /// <summary>A line of the matching lines pane: a matching line (<see cref="Match"/> set) or a kept line.</summary>
+    /// <param name="LineNumber">Line number in the file.</param>
+    /// <param name="Text">Text of the line.</param>
+    /// <param name="Match">The matching line, null for a line before / after a match.</param>
+    /// <param name="GapBefore">True when lines are skipped between the previous shown line and this one.</param>
+    public sealed record ShownLine(int LineNumber, string Text, LineMatch? Match, bool GapBefore);
+
+    /// <summary>
+    /// Lines of one file in the order they are shown: per matching line up to <paramref name="before"/>
+    /// kept lines before it (not shown yet), the matching line, up to <paramref name="after"/> kept lines
+    /// after it (before the next matching line). <see cref="ShownLine.GapBefore"/> only when
+    /// <paramref name="before"/> or <paramref name="after"/> is above 0.
+    /// </summary>
+    public static IEnumerable<ShownLine> ShownLines(FileResult file, int before, int after)
+    {
+        Dictionary<int, string> kept = file.ContextLines.ToDictionary(line => line.LineNumber, line => line.Text);
+        bool marksGaps = before > 0 || after > 0;
+        int lastShown = 0;
+        for (int index = 0; index < file.Lines.Count; index++)
+        {
+            LineMatch match = file.Lines[index];
+            int nextMatch = index + 1 < file.Lines.Count ? file.Lines[index + 1].LineNumber : int.MaxValue;
+            List<ShownLine> group = [];
+            for (int number = Math.Max(match.LineNumber - before, lastShown + 1); number < match.LineNumber; number++)
+            {
+                if (kept.TryGetValue(number, out string? text))
+                {
+                    group.Add(new ShownLine(number, text, null, false));
+                }
+            }
+            group.Add(new ShownLine(match.LineNumber, match.Text, match, false));
+            long lastAfter = Math.Min((long)match.LineNumber + after, nextMatch - 1L);
+            for (int number = match.LineNumber + 1; number <= lastAfter; number++)
+            {
+                if (kept.TryGetValue(number, out string? text))
+                {
+                    group.Add(new ShownLine(number, text, null, false));
+                }
+            }
+
+            foreach (ShownLine line in group)
+            {
+                bool gap = marksGaps && lastShown > 0 && line.LineNumber > lastShown + 1;
+                yield return gap ? line with { GapBefore = true } : line;
+                lastShown = line.LineNumber;
+            }
+        }
     }
 
     /// <summary>Line number with six digits as in the old program, e.g. "000012".</summary>

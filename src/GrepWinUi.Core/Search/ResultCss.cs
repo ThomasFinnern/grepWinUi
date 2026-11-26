@@ -183,5 +183,15 @@ public static class ResultCss
             color: green;
             font-weight: bold;
         }
+
+        /* A line before / after a matching line (header "Pre. lines" / "Post. lines") */
+        .ContextLine {
+            color: #606060;
+        }
+
+        /* Space between groups of lines that don't follow each other */
+        .Gap {
+            height: 0.8em;
+        }
         """;
 }

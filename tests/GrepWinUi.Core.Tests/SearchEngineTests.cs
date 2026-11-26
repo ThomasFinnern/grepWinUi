@@ -205,6 +205,25 @@ public sealed class SearchEngineTests : IDisposable
         Assert.Equal(0, result.FilesSearched);
     }
 
+    [Theory]
+    [InlineData(0, 0, new int[0])]
+    [InlineData(2, 0, new[] { 1, 2, 5, 6 })]
+    [InlineData(0, 2, new[] { 4, 5, 9, 10 })]
+    [InlineData(1, 1, new[] { 2, 4, 6, 9 })]
+    [InlineData(5, 5, new[] { 1, 2, 4, 5, 6, 9, 10 })]
+    public void Run_KeepLines_KeptAroundMatchesEachOnce(int before, int after, int[] expected)
+    {
+        // Matches in lines 3, 7, 8; 10 lines.
+        Write("ctx.txt", "1\n2\nfoo 3\n4\n5\n6\nfoo 7\nfoo 8\n9\n10");
+
+        SearchResult result = SearchEngine.Run(Query("foo", "ctx.txt"), null, CancellationToken.None, new KeepLines(before, after));
+
+        FileResult file = Assert.Single(result.Files);
+        Assert.Equal([3, 7, 8], file.Lines.Select(line => line.LineNumber));
+        Assert.Equal(expected, file.ContextLines.Select(line => line.LineNumber));
+        Assert.All(file.ContextLines, line => Assert.Equal(line.LineNumber.ToString(), line.Text));
+    }
+
     [Fact]
     public async Task RunAsync_SameResultAsRun()
     {
