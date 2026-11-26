@@ -219,24 +219,48 @@ One step = one session. Steps 1–16c (with 13a, 13b, 16b) are done.
        "To standard ↑" (new additions go to the top), no checkboxes
 16c. [x] Options menu "Folder name token" (was "Search folder list"): same as 16 for the folder
        names list, own Settings page (start values 7 / 3 / 40 / 15)
-17. [ ] Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
-       (regex, whole word, match case, lines before/after); async, cancellable, progress
-18. [ ] Result form: two WebView2 panes; HTML/CSS built in Core: fill with search data, style like in old project with classes
-19. [ ] Connect search to results: start/cancel
-20. [ ] Status bar Title and Info: short and long text about the current task / result
-21. [ ] Status bar Working: % of files done (config option, needs the file count before searching),
-       otherwise marquee animation while an action runs
-22. [ ] Status bar Folder (last folder name), Files (read / all) and Time (counting while a search runs)
-23. [ ] Result clicks: click on a file jumps to its lines; double click opens the "show file" form
-24. [ ] Save/open search results and the recent result files list (File menu)
-25. [ ] Reopen the last forms on start; the dialog then opens for the last active result form
+First iteration: plain search with visible results.
+17. [ ] Basic search engine (Core): one folder (incl. subfolders), file names as space separated
+       wildcards (`*.cs *.md`), plain text line search ignoring case; result model (files with their
+       matching lines and line numbers); async, cancellable, progress (files done); tests with temp folders
+18. [ ] Result layout basics + start/cancel: HTML of both panes built in Core from the result
+       (header, file list, matching lines with highlighted hits, CSS classes like in the old program).
+       CSS in outside files, one per pane: `FileList.css`, `MatchingLines.css`; standard files in
+       `Defaults\`, user copies in `%AppData%\GrepWinUi\` (user file → defaults file → built-in);
+       Core puts the CSS text into the HTML as `<style>`.
+       "Start search" in the search form searches, Search → Cancel Search stops (was "Connect search
+       to results")
+
+Second iteration: deepen step by step (each step removes the strike-through of the parameters it makes work).
+19. [ ] Status bar Title, Info, Folder (last folder name), Files (read / all), Time (counting while
+       a search runs); Working as marquee animation while a search runs
+20. [ ] Status bar Working in %: "Count files first (progress in %)" counts the files before searching
+21. [ ] Search string options: Match case, Whole words only, Regular expression
+22. [ ] Lines before / after a match: keep (prepared) and show; header pre/post lines change the
+       view without searching again
+23. [ ] File and folder filters: Include subfolders, File names as RegEx, Skip by extension,
+       Skip folders, Folder names as RegEx (path and file name / path name), Base name as RegEx,
+       several folders in "Folder name"
+24. [ ] Result modes: First match per file only, List files without match, Non matching lines,
+       Match whole line, File names only (no lines)
+25. [ ] Binary files and encodings: Skip binary files, Only binary files, text encoding detection
+       (UTF-8 / UTF-16 / ANSI)
+26. [ ] Filter by file date: Modified within last, Modified between
+27. [ ] Result view options: Title, Line numbers, Fixed font, File names, File contents, Whole line,
+       Double blanks; styling like in the old program
+28. [ ] Result clicks: click on a file jumps to its lines; double click opens the "show file" form
+29. [ ] Save/open search results and the recent result files list (File menu)
+30. [ ] Reopen the last forms on start; the dialog then opens for the last active result form
        if "Open search form" is set in Settings (On start of program)
-26. [ ] Replace
-27. [ ] Search in found files, "search again" key
-28. [ ] Options dialog: config editor, CSS colors
-29. [ ] `lib_CommandLine` library for command line parsing (program only defines its items)
-30. [ ] Command line
-31. [ ] Options menu: "Command line search parameters"
+31. [ ] Search in found files ("Only in files of current result", Search → Search in Files),
+       "search again" key (Search → Restart search)
+32. [ ] Replace
+33. [ ] Settings: two pages "File list CSS" and "Matching lines CSS", each with a text editor
+       control (fixed font) for its CSS file; Save writes the user copy, "Reset to standard"
+       reloads the Defaults file
+34. [ ] `lib_CommandLine` library for command line parsing (program only defines its items)
+35. [ ] Command line
+36. [ ] Options menu: "Command line search parameters"
 
 
 Ideas for later (not planned): ZIP search, printing, Explorer right-click entry,
@@ -244,5 +268,5 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 17: Search engine (Core): file enumeration (wildcard/regex, subfolders), line matching
-(regex, whole word, match case, lines before/after); async, cancellable, progress.
+Step 17: Basic search engine (Core): one folder incl. subfolders, file name wildcards, plain text
+line search ignoring case, result model; async, cancellable, progress.
