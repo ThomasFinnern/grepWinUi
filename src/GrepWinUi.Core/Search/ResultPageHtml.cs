@@ -58,28 +58,42 @@ public static class ResultPageHtml
     }
 
     /// <summary>
-    /// Matching lines pane: header, then per file its path (<c>FileNameTitle</c>) and its lines
-    /// (<c>LineNumber</c> + text with <c>Token</c> hits), or "Found no matches". Around each matching line
-    /// up to <see cref="ResultViewOptions.ShowLinesBefore"/> / <see cref="ResultViewOptions.ShowLinesAfter"/>
-    /// kept lines (<c>Line ContextLine</c>), each line once; lines after a match stop at the next match.
-    /// Groups of lines that don't follow each other are parted by <c>Gap</c> (only when lines before /
-    /// after are shown).
+    /// Matching lines pane: header (view option Title), then per file its path (<c>FileNameTitle</c>, option
+    /// File names) and its lines (option File contents): <c>LineNumber</c> (option Line numbers) + text with
+    /// <c>Token</c> hits. Around each matching line up to <see cref="ResultViewOptions.ShowLinesBefore"/> /
+    /// <see cref="ResultViewOptions.ShowLinesAfter"/> kept lines (<c>Line ContextLine</c>), each line once;
+    /// lines after a match stop at the next match. Groups of lines that don't follow each other are parted
+    /// by <c>Gap</c> (only when lines before / after are shown). Without option Whole line only the hits of a
+    /// matching line are written (<see cref="HitsOnly"/>); without option Double blanks runs of blanks become
+    /// one (<see cref="ReduceBlanks(LineMatch)"/>). Option Fixed font: <c>&lt;body class="FixedFont"&gt;</c>.
+    /// "Found no matches" when there are no files.
     /// </summary>
     public static string MatchingLines(SearchResult result, ResultViewOptions view, string css, string background)
     {
         StringBuilder body = new();
-        body.Append("<div class=\"HeaderFoundToken\"><h1>").Append(LinesTitleKind(result.Query)).Append(" '")
-            .Append(Encode(result.Query.SearchString)).Append("'</h1></div>");
+        string? bodyClass = view.FixedFont ? "FixedFont" : null;
+        if (view.ShowTitle)
+        {
+            body.Append("<div class=\"HeaderFoundToken\"><h1>").Append(LinesTitleKind(result.Query)).Append(" '")
+                .Append(Encode(result.Query.SearchString)).Append("'</h1></div>");
+        }
         if (result.Files.Count == 0)
         {
             body.Append(NotFound(result));
-            return Page(css, background, body.ToString());
+            return Page(css, background, body.ToString(), bodyClass);
         }
 
         int written = 0;
         foreach (FileResult file in result.Files)
         {
-            body.Append("<div class=\"FileNameTitle\">").Append(Encode(file.Path)).Append("</div>");
+            if (view.ShowFileNames)
+            {
+                body.Append("<div class=\"FileNameTitle\">").Append(Encode(file.Path)).Append("</div>");
+            }
+            if (!view.ShowFileContents)
+            {
+                continue;
+            }
             foreach (ShownLine shown in ShownLines(file, Math.Max(0, view.ShowLinesBefore), Math.Max(0, view.ShowLinesAfter)))
             {
                 if (shown.GapBefore)
@@ -89,15 +103,85 @@ public static class ResultPageHtml
                 if (written++ == MaxLines)
                 {
                     body.Append($"<p class=\"NotFound\">… only the first {MaxLines} lines are shown.</p>");
-                    return Page(css, background, body.ToString());
+                    return Page(css, background, body.ToString(), bodyClass);
                 }
-                body.Append(shown.Match is LineMatch match
-                    ? $"<div class=\"Line\"><span class=\"LineNumber\">{LineNumber(shown.LineNumber)}: </span>{MarkHits(match)}</div>"
-                    : $"<div class=\"Line ContextLine\"><span class=\"LineNumber\">{LineNumber(shown.LineNumber)}: </span>{Encode(shown.Text)}</div>");
+                body.Append(LineHtml(shown, view));
             }
         }
-        return Page(css, background, body.ToString());
+        return Page(css, background, body.ToString(), bodyClass);
     }
+
+    /// <summary>One shown line as &lt;div&gt; with line number and text, formed by the view options.</summary>
+    public static string LineHtml(ShownLine shown, ResultViewOptions view)
+    {
+        string number = view.ShowLineNumbers ? $"<span class=\"LineNumber\">{LineNumber(shown.LineNumber)}: </span>" : "";
+        if (shown.Match is LineMatch match)
+        {
+            LineMatch line = view.ShowDoubleBlanks ? match : ReduceBlanks(match);
+            string text = view.ShowWholeLine ? MarkHits(line) : HitsOnly(line);
+            return $"<div class=\"Line\">{number}{text}</div>";
+        }
+        string context = view.ShowDoubleBlanks ? shown.Text : ReduceBlanks(shown.Text);
+        return $"<div class=\"Line ContextLine\">{number}{Encode(context)}</div>";
+    }
+
+    /// <summary>Text between hits shown without view option Whole line.</summary>
+    public const string HitSeparator = " … ";
+
+    /// <summary>
+    /// Only the hits of a line, each in &lt;span class="Token"&gt;, parted by <see cref="HitSeparator"/>.
+    /// A line without hits (e.g. "Non matching lines") is written whole.
+    /// </summary>
+    public static string HitsOnly(LineMatch line) => line.Hits.Count == 0
+        ? Encode(line.Text)
+        : string.Join(HitSeparator, line.Hits.Select(hit =>
+            $"<span class=\"Token\">{Encode(line.Text.Substring(hit.Start, hit.Length))}</span>"));
+
+    /// <summary>Text with every run of blanks (spaces, tabs) reduced to one space.</summary>
+    public static string ReduceBlanks(string text) => ReduceBlanks(new LineMatch(0, text, [])).Text;
+
+    /// <summary>
+    /// Line with every run of blanks (spaces, tabs) reduced to one space; the hits are moved so they mark
+    /// the same text (hits that shrink to nothing are dropped).
+    /// </summary>
+    public static LineMatch ReduceBlanks(LineMatch line)
+    {
+        string text = line.Text;
+        StringBuilder reduced = new(text.Length);
+        int[] newIndex = new int[text.Length + 1];
+        for (int index = 0; index < text.Length; index++)
+        {
+            newIndex[index] = reduced.Length;
+            bool blank = IsBlank(text[index]);
+            if (!blank)
+            {
+                reduced.Append(text[index]);
+            }
+            else if (index == 0 || !IsBlank(text[index - 1]))
+            {
+                reduced.Append(' ');
+            }
+        }
+        newIndex[text.Length] = reduced.Length;
+        if (reduced.Length == text.Length && !text.Contains('	'))
+        {
+            return line;
+        }
+
+        List<Hit> hits = [];
+        foreach (Hit hit in line.Hits)
+        {
+            int start = newIndex[hit.Start];
+            int length = newIndex[hit.Start + hit.Length] - start;
+            if (length > 0)
+            {
+                hits.Add(new Hit(start, length));
+            }
+        }
+        return line with { Text = reduced.ToString(), Hits = hits };
+    }
+
+    private static bool IsBlank(char character) => character is ' ' or '	';
 
     /// <summary>A line of the matching lines pane: a matching line (<see cref="Match"/> set) or a kept line.</summary>
     /// <param name="LineNumber">Line number in the file.</param>
@@ -199,9 +283,9 @@ public static class ResultPageHtml
 
     private static string Encode(string text) => WebUtility.HtmlEncode(text);
 
-    private static string Page(string css, string background, string body) =>
+    private static string Page(string css, string background, string body, string? bodyClass = null) =>
         "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"><style>\n"
         + $"body {{ background: {background}; }}\n"
         + css
-        + "\n</style></head><body>" + body + "</body></html>\n";
+        + "\n</style></head><body" + (bodyClass is null ? "" : $" class=\"{bodyClass}\"") + ">" + body + "</body></html>\n";
 }

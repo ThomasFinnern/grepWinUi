@@ -245,6 +245,14 @@ No admin rights needed: nothing is written next to the exe.
     kept lines as `div.Line.ContextLine` (no hits); `div.Gap` before a line that doesn't follow the previous
     shown line, only when before/after > 0 (old program: `<br>` after every match line, post lines not
     cut at the next match). `MaxLines` counts all shown lines. CSS `.ContextLine` (grey), `.Gap` (0.8em).
+    Step 27, view options (`ResultViewOptions`, only this pane, as in the old program): `ShowTitle` (header),
+    `ShowFileNames` (`FileNameTitle`), `ShowFileContents` (all lines; off → list of paths),
+    `ShowLineNumbers`; one line by `LineHtml(shown, view)`. `ShowWholeLine` off → `HitsOnly(line)`: only
+    the hits, parted by `HitSeparator` " … " (old program: no separator); a line without hits and
+    kept lines stay whole. `FixedFont` (new, old program: unused) → `<body class="FixedFont">`, the CSS
+    sets Consolas only in `.FixedFont .Line` (Verdana otherwise). `ShowDoubleBlanks` off (default; new,
+    old program: unused) → `ReduceBlanks`: every run of spaces / tabs becomes one space, also the indent;
+    the hits are moved to mark the same text (a hit that shrinks to nothing is dropped).
   - `Hint(text, css, background)`; `Summary(result)` ("In files '…': found n matches in n files from n
     files searched in folder '…' (0.4 s)", plus " — cancelled").
   - All text HTML encoded; at most `MaxLines` (5000) lines, because `NavigateToString` takes only about 2 MB.
@@ -457,6 +465,6 @@ Taken from `netGrepWin.code.md`; details per step in the roadmap.
 - **Result form:**
   - File list: click on a file shows its lines in the lower pane and marks it as active;
     double click opens a "show and search inside file" form (step 28); Size and Date columns.
-  - Matching lines: the header line options decide what is shown (e.g. pre/post lines, step 22 / 27).
+  - Matching lines: styling details compared with the old program are open (font size 9pt vs. 8pt).
 - **Old drawbacks to avoid:** UI freezes while searching (→ async), results lost after a popup
   question, admin rights for config (→ `%AppData%`).

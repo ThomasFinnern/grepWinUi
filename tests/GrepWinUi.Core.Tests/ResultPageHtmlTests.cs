@@ -173,6 +173,129 @@ public sealed class ResultPageHtmlTests
         Assert.Contains("<body></body>", ResultPageHtml.Hint("", Css, "white"));
     }
 
+    [Fact]
+    public void MatchingLines_TitleOff_NoHeader()
+    {
+        string html = ResultPageHtml.MatchingLines(Result(cancelled: false, problems: []), new ResultViewOptions { ShowTitle = false }, Css, "white");
+
+        Assert.DoesNotContain("HeaderFoundToken", html);
+        Assert.Contains("FileNameTitle", html);
+    }
+
+    [Fact]
+    public void FileList_HeaderStaysWithTitleOff()
+    {
+        // The view option Title only changes the matching lines pane (as in the old program).
+        Assert.Contains("HeaderFoundFiles", ResultPageHtml.FileList(Result(cancelled: false, problems: []), Css, "white"));
+    }
+
+    [Fact]
+    public void MatchingLines_LineNumbersOff_NoNumberSpans()
+    {
+        SearchResult result = new(new SearchQuery { SearchString = "foo" }, [ContextFile], 1, 1, 3, TimeSpan.Zero, false, []);
+
+        string html = ResultPageHtml.MatchingLines(result, new ResultViewOptions { ShowLineNumbers = false, ShowLinesBefore = 1 }, Css, "white");
+
+        Assert.DoesNotContain("LineNumber", html);
+        Assert.Contains(@"<div class=""Line""><span class=""Token"">foo</span></div>", html);
+        Assert.Contains(@"<div class=""Line ContextLine"">line 4</div>", html);
+    }
+
+    [Fact]
+    public void MatchingLines_FixedFont_BodyClass()
+    {
+        SearchResult result = Result(cancelled: false, problems: []);
+
+        Assert.Contains(@"<body class=""FixedFont"">", ResultPageHtml.MatchingLines(result, new ResultViewOptions { FixedFont = true }, Css, "white"));
+        Assert.Contains("<body>", ResultPageHtml.MatchingLines(result, new ResultViewOptions { FixedFont = false }, Css, "white"));
+    }
+
+    [Fact]
+    public void MatchingLinesCss_FixedFontOnlyWithBodyClass()
+    {
+        Assert.Contains(".FixedFont .Line {", ResultCss.MatchingLines);
+        Assert.DoesNotContain("monospace", ResultCss.MatchingLines[..ResultCss.MatchingLines.IndexOf(".FixedFont", StringComparison.Ordinal)]);
+    }
+
+    [Fact]
+    public void MatchingLines_FileNamesOff_LinesOnly()
+    {
+        string html = ResultPageHtml.MatchingLines(Result(cancelled: false, problems: []), new ResultViewOptions { ShowFileNames = false }, Css, "white");
+
+        Assert.DoesNotContain("FileNameTitle", html);
+        Assert.Contains("000012: ", html);
+    }
+
+    [Fact]
+    public void MatchingLines_FileContentsOff_FileNamesOnly()
+    {
+        string html = ResultPageHtml.MatchingLines(Result(cancelled: false, problems: []), new ResultViewOptions { ShowFileContents = false }, Css, "white");
+
+        Assert.Contains(@"<div class=""FileNameTitle"">c:\src\a.cs</div><div class=""FileNameTitle"">c:\src\b&amp;c.cs</div>", html);
+        Assert.DoesNotContain(@"class=""Line", html);
+    }
+
+    [Fact]
+    public void MatchingLines_WholeLineOff_HitsOnly()
+    {
+        string html = ResultPageHtml.MatchingLines(Result(cancelled: false, problems: []), new ResultViewOptions { ShowWholeLine = false }, Css, "white");
+
+        Assert.Contains(@"000012: </span><span class=""Token"">foo</span> … <span class=""Token"">foo</span></div>", html);
+    }
+
+    [Fact]
+    public void HitsOnly_NoHits_WholeLine()
+    {
+        Assert.Equal("a &lt; b", ResultPageHtml.HitsOnly(new LineMatch(1, "a < b", [])));
+    }
+
+    [Fact]
+    public void MatchingLines_WholeLineOff_ContextLinesStayWhole()
+    {
+        SearchResult result = new(new SearchQuery { SearchString = "foo" }, [ContextFile], 1, 1, 3, TimeSpan.Zero, false, []);
+
+        string html = ResultPageHtml.MatchingLines(result, new ResultViewOptions { ShowWholeLine = false, ShowLinesBefore = 1 }, Css, "white");
+
+        Assert.Contains("000004: </span>line 4</div>", html);
+    }
+
+    [Fact]
+    public void ReduceBlanks_RunsOfSpacesAndTabsBecomeOneSpace()
+    {
+        Assert.Equal(" a b c ", ResultPageHtml.ReduceBlanks("	 a  	b	c   "));
+        Assert.Equal("abc", ResultPageHtml.ReduceBlanks("abc"));
+    }
+
+    [Fact]
+    public void ReduceBlanks_HitsMarkTheSameText()
+    {
+        //                          0123456789012345
+        LineMatch line = new(1, "  x   foo		bar", [new Hit(6, 3), new Hit(11, 3)]);
+
+        LineMatch reduced = ResultPageHtml.ReduceBlanks(line);
+
+        Assert.Equal(" x foo bar", reduced.Text);
+        Assert.Equal(["foo", "bar"], reduced.Hits.Select(hit => reduced.Text.Substring(hit.Start, hit.Length)));
+    }
+
+    [Fact]
+    public void ReduceBlanks_HitOnBlanks_ShrinksToOneBlank()
+    {
+        LineMatch reduced = ResultPageHtml.ReduceBlanks(new LineMatch(1, "a   b", [new Hit(1, 3)]));
+
+        Assert.Equal([new Hit(1, 1)], reduced.Hits);
+    }
+
+    [Fact]
+    public void MatchingLines_DoubleBlanks_KeptOrReduced()
+    {
+        SearchResult result = new(new SearchQuery { SearchString = "foo" },
+            [new FileResult("a.txt", [new LineMatch(1, "    x  foo", [new Hit(7, 3)])])], 1, 1, 1, TimeSpan.Zero, false, []);
+
+        Assert.Contains(@"</span>    x  <span class=""Token"">foo</span>", ResultPageHtml.MatchingLines(result, new ResultViewOptions { ShowDoubleBlanks = true }, Css, "white"));
+        Assert.Contains(@"</span> x <span class=""Token"">foo</span>", ResultPageHtml.MatchingLines(result, new ResultViewOptions { ShowDoubleBlanks = false }, Css, "white"));
+    }
+
     private static SearchResult Result(bool cancelled, IReadOnlyList<string> problems) => new(
         new SearchQuery { SearchString = "foo", FileNames = "*.cs", FolderName = @"c:\src" },
         [

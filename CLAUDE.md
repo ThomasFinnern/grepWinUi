@@ -169,7 +169,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–26 (with 13a, 13b, 16b, 16c) are done.
+One step = one session. Steps 1–27 (with 13a, 13b, 16b, 16c) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 2. [x] Install .NET SDK (11.0.100 installed)
 3. [x] Install VS Code "C#" extension
@@ -249,7 +249,7 @@ Second iteration: deepen step by step (each step removes the strike-through of t
 25. [x] Binary files and encodings: Skip binary files, Only binary files, text encoding detection
        (UTF-8 / UTF-16 / ANSI)
 26. [x] Filter by file date: Modified within last, Modified between
-27. [ ] Result view options: Title, Line numbers, Fixed font, File names, File contents, Whole line,
+27. [x] Result view options: Title, Line numbers, Fixed font, File names, File contents, Whole line,
        Double blanks; styling like in the old program
 28. [ ] Result clicks: click on a file jumps to its lines; double click opens the "show file" form
 29. [ ] Recent result files list (File → Last used search files); "same search already open →
@@ -273,5 +273,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 27: result view options: Title, Line numbers, Fixed font, File names, File contents, Whole line,
-Double blanks; styling like in the old program.
+Step 28: result clicks: click on a file jumps to its lines; double click opens the "show file" form.

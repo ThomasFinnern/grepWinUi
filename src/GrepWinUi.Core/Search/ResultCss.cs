@@ -169,8 +169,12 @@ public static class ResultCss
 
         /* One matching line: line number and text */
         .Line {
-            font-family: Consolas, monospace;
             white-space: pre;
+        }
+
+        /* View option "Fixed font" (body class) */
+        .FixedFont .Line {
+            font-family: Consolas, monospace;
         }
 
         .LineNumber {

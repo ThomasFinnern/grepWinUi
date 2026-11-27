@@ -39,6 +39,12 @@ redesign from start with the help of AI
   Pre. / Post. lines shows the result again at once, without searching. Each line is shown once; groups
   of lines that don't follow each other get a small space between them. A bigger "keep" value takes
   effect with the next search. Saved results (`*.result.json`) include the kept lines.
+- **View options** (header line of a result window, standard values in Settings → Search result view):
+  change the matching lines pane at once, without searching again.
+  **Title** shows the blue header, **Line numbers** the `000012:` numbers, **File names** the path above
+  each file's lines, **File contents** the lines (off: only the list of paths). **Whole line** off shows
+  only the found parts of a matching line, separated by ` … `. **Fixed font** shows the lines in
+  Consolas instead of Verdana. **Double blanks** off reduces runs of spaces and tabs to one blank.
 - **File → Open search query (Ctrl+O):** opens a saved search query file in a new result window,
   together with its search properties dialog.
 - **File → Load search query:** loads a saved search query into the active result window
