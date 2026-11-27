@@ -253,10 +253,19 @@ No admin rights needed: nothing is written next to the exe.
     sets Consolas only in `.FixedFont .Line` (Verdana otherwise). `ShowDoubleBlanks` off (default; new,
     old program: unused) → `ReduceBlanks`: every run of spaces / tabs becomes one space, also the indent;
     the hits are moved to mark the same text (a hit that shrinks to nothing is dropped).
+  - Step 28, clicks: file list rows carry `data-file` = index in `result.Files`, the page ends with the
+    script `ResultPageScript.FileList` (only when there are files); each file in the matching lines page
+    starts with id `ResultPageScript.FileId(i)` = `file-i` (on `div.FileNameTitle`, or an empty `span`
+    without option File names).
   - `Hint(text, css, background)`; `Summary(result)` ("In files '…': found n matches in n files from n
     files searched in folder '…' (0.4 s)", plus " — cancelled").
   - All text HTML encoded; at most `MaxLines` (5000) lines, because `NavigateToString` takes only about 2 MB.
   - Size / date columns of the old file list are not there yet (the result model has no size/date).
+- `ResultPageScript` (step 28): `FileList` script: a click on a row marks it (`tr.highlight`, other rows
+  lose it; CSS rule in `FileList.css`) and posts `{"kind":"click","file":i}` (WebView2
+  `chrome.webview.postMessage`). `ParseFileClick(json)` → index or null (other kind, broken JSON,
+  negative / not whole number). `ScrollToFile(i)`: script that scrolls `file-i` to the top, nothing if
+  it isn't on the page (e.g. cut after `MaxLines`).
 - `SearchStatus` (step 19): status bar texts of one result form, record `(Title, Info, Folder, Files,
   Time, IsRunning, Percent)`. `Idle` (all empty), `Running(query, progress, elapsed, showFileNames)`
   ("Searching '…'", current file as Info only if `showFileNames`, Folder = last name of the current
@@ -372,6 +381,9 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   returns what it found so far (`Cancelled = true`) and the panes show it, marked "cancelled".
   `ResultChanged` is raised at search start and end, so `MainForm.UpdateMenuState` enables
   Search → Cancel Search (`MainMenu.CancelSearchName`) only while the active form searches.
+- **Click on a file** (step 28): `OnFileListMessage` (`WebMessageReceived` of the file list pane) →
+  `ResultPageScript.ParseFileClick` → `ExecuteScriptAsync(ScrollToFile(i))` on the matching lines pane.
+  The file list page is not built again on view changes, so the marked row stays.
 - **Keys in the WebView2 panes:** the WinForms WebView2 control only raises its own `KeyDown` for
   shortcut keys and doesn't pass them to the window, so the main menu never sees them (Ctrl+F would
   open the browser's find bar). `OnPaneKeyDown` looks the key up with `MainMenu.FindShortcut`
@@ -464,7 +476,7 @@ Taken from `netGrepWin.code.md`; details per step in the roadmap.
 - **Lists** are saved on each change.
 - **Result form:**
   - File list: click on a file shows its lines in the lower pane and marks it as active;
-    double click opens a "show and search inside file" form (step 28); Size and Date columns.
+    double click opens a single file view (later step, approach to be chosen); Size and Date columns.
   - Matching lines: styling details compared with the old program are open (font size 9pt vs. 8pt).
 - **Old drawbacks to avoid:** UI freezes while searching (→ async), results lost after a popup
   question, admin rights for config (→ `%AppData%`).

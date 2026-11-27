@@ -169,7 +169,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–27 (with 13a, 13b, 16b, 16c) are done.
+One step = one session. Steps 1–28 (with 13a, 13b, 16b, 16c) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 2. [x] Install .NET SDK (11.0.100 installed)
 3. [x] Install VS Code "C#" extension
@@ -251,7 +251,7 @@ Second iteration: deepen step by step (each step removes the strike-through of t
 26. [x] Filter by file date: Modified within last, Modified between
 27. [x] Result view options: Title, Line numbers, Fixed font, File names, File contents, Whole line,
        Double blanks; styling like in the old program
-28. [ ] Result clicks: click on a file jumps to its lines; double click opens the "show file" form
+28. [x] Result clicks: click on a file jumps to its lines and marks its row (double click: step 37)
 29. [ ] Recent result files list (File → Last used search files); "same search already open →
        reload that window" as in the old program. (File → Save / Open search result with
        `*.result.json` was done in between after step 17.)
@@ -266,6 +266,10 @@ Second iteration: deepen step by step (each step removes the strike-through of t
 34. [ ] `lib_CommandLine` library for command line parsing (program only defines its items)
 35. [ ] Command line
 36. [ ] Options menu: "Command line search parameters"
+37. [ ] Single file view (double click on a file in the file list): discuss first. Old program: read-only
+       "File content view" (whole file, hits marked, previous/next hit and file; Edit/Open without code).
+       Options: A read-only viewer in WebView2, B own editor (RichTextBox), C1 Monaco editor in WebView2,
+       C2 Scintilla.NET, D external editor (Settings command line with file and line), E = A + D
 
 
 Ideas for later (not planned): ZIP search, printing, Explorer right-click entry,
@@ -273,4 +277,5 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 28: result clicks: click on a file jumps to its lines; double click opens the "show file" form.
+Step 29: recent result files list (File → Last used search files); same search already open →
+reload that window.

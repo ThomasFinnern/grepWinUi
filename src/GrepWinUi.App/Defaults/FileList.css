@@ -65,3 +65,8 @@ td.FileName div {
 tr:hover td {
     background-color: #DCDCDC;
 }
+
+/* The clicked file (its lines are shown in the matching lines pane) */
+tr.highlight td {
+    background-color: #C8DCF4;
+}

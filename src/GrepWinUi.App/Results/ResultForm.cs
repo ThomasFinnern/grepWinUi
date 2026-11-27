@@ -62,6 +62,19 @@ internal sealed class ResultForm : Form
         Load += (_, _) => _panesReady = InitPanesAsync();
         _statusTimer.Tick += (_, _) => _updateRunningStatus?.Invoke();
         _optionsBar.ViewChanged += (_, _) => _ = ShowMatchingLinesAgainAsync();
+        _fileListPane.WebMessageReceived += OnFileListMessage;
+    }
+
+    /// <summary>
+    /// A click on a file in the file list (reported by the page script, <see cref="ResultPageScript"/>):
+    /// the matching lines pane scrolls to that file's lines.
+    /// </summary>
+    private void OnFileListMessage(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    {
+        if (ResultPageScript.ParseFileClick(e.WebMessageAsJson) is int index && _matchingLinesPane.CoreWebView2 is not null)
+        {
+            _ = _matchingLinesPane.ExecuteScriptAsync(ResultPageScript.ScrollToFile(index));
+        }
     }
 
     /// <summary>

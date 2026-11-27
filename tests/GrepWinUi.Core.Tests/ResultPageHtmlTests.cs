@@ -141,7 +141,7 @@ public sealed class ResultPageHtmlTests
         string html = ResultPageHtml.MatchingLines(Result(cancelled: false, problems: []), View, Css, "white");
 
         Assert.Contains(@"<div class=""HeaderFoundToken""><h1>Lines with 'foo'</h1></div>", html);
-        Assert.Contains(@"<div class=""FileNameTitle"">c:\src\a.cs</div>", html);
+        Assert.Contains(@"<div class=""FileNameTitle"" id=""file-0"">c:\src\a.cs</div>", html);
         Assert.Contains(@"<div class=""Line""><span class=""LineNumber"">000012: </span>x <span class=""Token"">foo</span>", html);
         Assert.True(html.IndexOf("a.cs", StringComparison.Ordinal) < html.IndexOf("b&amp;c.cs", StringComparison.Ordinal));
     }
@@ -231,7 +231,7 @@ public sealed class ResultPageHtmlTests
     {
         string html = ResultPageHtml.MatchingLines(Result(cancelled: false, problems: []), new ResultViewOptions { ShowFileContents = false }, Css, "white");
 
-        Assert.Contains(@"<div class=""FileNameTitle"">c:\src\a.cs</div><div class=""FileNameTitle"">c:\src\b&amp;c.cs</div>", html);
+        Assert.Contains(@"<div class=""FileNameTitle"" id=""file-0"">c:\src\a.cs</div><div class=""FileNameTitle"" id=""file-1"">c:\src\b&amp;c.cs</div>", html);
         Assert.DoesNotContain(@"class=""Line", html);
     }
 

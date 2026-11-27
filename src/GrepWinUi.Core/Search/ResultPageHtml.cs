@@ -23,6 +23,8 @@ public static class ResultPageHtml
     /// <summary>
     /// File list pane: header (searched string, <see cref="Summary"/>), problems, then a table
     /// File name / Folder / Matches (Lines with "Non matching lines", none without lines), or "Found no …".
+    /// Each row has <c>data-file</c> = index in <see cref="SearchResult.Files"/>; the page script
+    /// <see cref="ResultPageScript.FileList"/> reports clicks on rows.
     /// </summary>
     public static string FileList(SearchResult result, string css, string background)
     {
@@ -45,16 +47,17 @@ public static class ResultPageHtml
         string? countTitle = mode.NoLines ? null : mode.NonMatchingLines ? "Lines" : "Matches";
         body.Append("<table><tr><th class=\"FileName\">File name</th><th class=\"Folder\">Folder</th>")
             .Append(countTitle is null ? "" : $"<th class=\"Matches\">{countTitle}</th>").Append("</tr>");
-        foreach (FileResult file in result.Files)
+        for (int index = 0; index < result.Files.Count; index++)
         {
+            FileResult file = result.Files[index];
             string name = Encode(Path.GetFileName(file.Path));
-            body.Append("<tr><td class=\"FileName\"><div title=\"").Append(name).Append("\">").Append(name)
+            body.Append("<tr data-file=\"").Append(index).Append("\"><td class=\"FileName\"><div title=\"").Append(name).Append("\">").Append(name)
                 .Append("</div></td><td class=\"Folder\">").Append(Encode(Path.GetDirectoryName(file.Path) ?? ""))
                 .Append("</td>")
                 .Append(countTitle is null ? "" : $"<td class=\"Matches\">{mode.CountOf(file)}</td>").Append("</tr>");
         }
         body.Append("</table>");
-        return Page(css, background, body.ToString());
+        return Page(css, background, body.ToString(), script: ResultPageScript.FileList);
     }
 
     /// <summary>
@@ -66,6 +69,8 @@ public static class ResultPageHtml
     /// by <c>Gap</c> (only when lines before / after are shown). Without option Whole line only the hits of a
     /// matching line are written (<see cref="HitsOnly"/>); without option Double blanks runs of blanks become
     /// one (<see cref="ReduceBlanks(LineMatch)"/>). Option Fixed font: <c>&lt;body class="FixedFont"&gt;</c>.
+    /// Each file starts with an element with id <see cref="ResultPageScript.FileId"/> (the file name title,
+    /// or an empty span without option File names), the target of a click in the file list.
     /// "Found no matches" when there are no files.
     /// </summary>
     public static string MatchingLines(SearchResult result, ResultViewOptions view, string css, string background)
@@ -84,12 +89,13 @@ public static class ResultPageHtml
         }
 
         int written = 0;
-        foreach (FileResult file in result.Files)
+        for (int index = 0; index < result.Files.Count; index++)
         {
-            if (view.ShowFileNames)
-            {
-                body.Append("<div class=\"FileNameTitle\">").Append(Encode(file.Path)).Append("</div>");
-            }
+            FileResult file = result.Files[index];
+            string id = ResultPageScript.FileId(index);
+            body.Append(view.ShowFileNames
+                ? $"<div class=\"FileNameTitle\" id=\"{id}\">{Encode(file.Path)}</div>"
+                : $"<span id=\"{id}\"></span>");
             if (!view.ShowFileContents)
             {
                 continue;
@@ -283,9 +289,11 @@ public static class ResultPageHtml
 
     private static string Encode(string text) => WebUtility.HtmlEncode(text);
 
-    private static string Page(string css, string background, string body, string? bodyClass = null) =>
+    private static string Page(string css, string background, string body, string? bodyClass = null, string? script = null) =>
         "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"><style>\n"
         + $"body {{ background: {background}; }}\n"
         + css
-        + "\n</style></head><body" + (bodyClass is null ? "" : $" class=\"{bodyClass}\"") + ">" + body + "</body></html>\n";
+        + "\n</style></head><body" + (bodyClass is null ? "" : $" class=\"{bodyClass}\"") + ">" + body
+        + (script is null ? "" : "<script>\n" + script + "\n</script>")
+        + "</body></html>\n";
 }

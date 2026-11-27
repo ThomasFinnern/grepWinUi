@@ -39,6 +39,8 @@ redesign from start with the help of AI
   Pre. / Post. lines shows the result again at once, without searching. Each line is shown once; groups
   of lines that don't follow each other get a small space between them. A bigger "keep" value takes
   effect with the next search. Saved results (`*.result.json`) include the kept lines.
+- **Click on a file** in the file list: the matching lines pane scrolls to that file's lines, and the
+  file's row stays marked (light blue).
 - **View options** (header line of a result window, standard values in Settings → Search result view):
   change the matching lines pane at once, without searching again.
   **Title** shows the blue header, **Line numbers** the `000012:` numbers, **File names** the path above

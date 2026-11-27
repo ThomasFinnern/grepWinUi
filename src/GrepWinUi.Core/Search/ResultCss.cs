@@ -124,6 +124,11 @@ public static class ResultCss
         tr:hover td {
             background-color: #DCDCDC;
         }
+
+        /* The clicked file (its lines are shown in the matching lines pane) */
+        tr.highlight td {
+            background-color: #C8DCF4;
+        }
         """;
 
     /// <summary>Built-in CSS of the matching lines pane (same as Defaults\MatchingLines.css).</summary>
