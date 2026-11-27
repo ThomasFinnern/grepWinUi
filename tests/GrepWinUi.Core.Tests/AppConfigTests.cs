@@ -23,7 +23,7 @@ public sealed class AppConfigTests : IDisposable
 
         Assert.False(config.OpenSearchFormOnStart);
         Assert.False(config.RepeatLastSearchOnStart);
-        Assert.False(config.ReopenLastSearchesOnStart);
+        Assert.True(config.ReopenLastSearchesOnStart);
         Assert.False(config.ShowLastResultOnStart);
         Assert.True(config.ShowFileNamesWhileSearching);
         Assert.False(config.ShowProgressInPercent);

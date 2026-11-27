@@ -83,12 +83,25 @@ public sealed partial class MainForm : Form
     private void UpdateStatusBar() =>
         _statusBar.ShowStatus((ActiveMdiChild as ResultForm)?.Status ?? SearchStatus.Idle);
 
-    /// <summary>Program start: without an open result form, a new empty one with its search properties dialog.</summary>
+    /// <summary>
+    /// Program start: reopens the result forms of the last exit (<see cref="ReopenLastSearches"/>); with Settings
+    /// "Open search form" the search properties dialog then opens for the active one. Nothing reopened:
+    /// a new empty result form with its search properties dialog.
+    /// </summary>
     private void OnFirstShown()
     {
-        if (MdiChildren.Length == 0)
+        if (MdiChildren.Length > 0)
+        {
+            return;
+        }
+
+        if (!ReopenLastSearches())
         {
             NewSearch();
+        }
+        else if (Config.OpenSearchFormOnStart && ActiveMdiChild is ResultForm active)
+        {
+            ShowSearchProperties(active);
         }
     }
 
@@ -104,11 +117,11 @@ public sealed partial class MainForm : Form
     /// <summary>New result form with <paramref name="query"/> and a copy of the view settings, then its search properties dialog.</summary>
     private void OpenResultForm(SearchQuery query) => ShowSearchProperties(CreateResultForm(query));
 
-    /// <summary>New, shown result form with <paramref name="query"/> and a copy of the view settings.</summary>
-    private ResultForm CreateResultForm(SearchQuery query)
+    /// <summary>New, shown result form with <paramref name="query"/> and a copy of <paramref name="view"/> (default: the view settings).</summary>
+    private ResultForm CreateResultForm(SearchQuery query, ResultViewOptions? view = null)
     {
         _resultFormCount++;
-        ResultForm form = new(query, Config.ResultView with { }, WebViewEnvironment(), _resultFormCount, _store.Folders)
+        ResultForm form = new(query, (view ?? Config.ResultView) with { }, WebViewEnvironment(), _resultFormCount, _store.Folders)
         {
             MdiParent = this,
             Icon = Icon,

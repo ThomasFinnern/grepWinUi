@@ -1,7 +1,7 @@
 {
   "OpenSearchFormOnStart": false,
   "RepeatLastSearchOnStart": false,
-  "ReopenLastSearchesOnStart": false,
+  "ReopenLastSearchesOnStart": true,
   "ShowLastResultOnStart": false,
   "ShowFileNamesWhileSearching": true,
   "ShowProgressInPercent": false,

@@ -119,6 +119,11 @@ redesign from start with the help of AI
 - **File → Save search result:** saves the result of the active window to a `*.result.json` file:
   the search parameters, the file list and the matching lines (with line numbers and hit positions),
   plus the counts and problems. Greyed out while the active window has no result.
+- **Reopen on start:** the search windows open when you close grepWinUi come back on the next start, with
+  their results, search and header line settings (no new search); the window that was active is active
+  again. Settings → On start of program: **Reopen last open searches** (on by default) reopens all windows,
+  **Show last search result** only the active one, **Open search form** then opens the search properties
+  dialog for it. Without windows to reopen a new window with the search properties dialog opens.
 - **File → Last used search files:** the search query and search result files you saved, opened or
   loaded last (newest on top, up to 15). A click opens the file: a result shows its saved lists, a query
   opens with its search properties dialog. A file that no longer exists is removed from the list.

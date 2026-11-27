@@ -39,6 +39,7 @@ No admin rights needed: nothing is written next to the exe.
 | `AppConfig` | `Config.json` (Defaults file: `src/GrepWinUi.App/Defaults/Config.json`, a test keeps it equal to the built-in defaults) |
 | `LastUsedFiles` | `LastUsed.json` |
 | `RecentFilesList` | `RecentFiles.json` (File → Last used search files) |
+| `ReopenSearches` | `ReopenSearches.json` (windows to reopen) + their results in `Reopen\Search_<n>.result.json` |
 | `SearchStringList` | `SearchStrings.json` (`Items` = used, `Fixed` = fixed tokens) |
 | `FileNamesList` | `FileNames.json` (`Items` = used, `Fixed` = fixed tokens) |
 | `FolderNameList` | `FolderNames.json` (`Items` = used, `Fixed` = fixed tokens) |
@@ -99,6 +100,12 @@ No admin rights needed: nothing is written next to the exe.
 - `RecentFilesList` (step 29, `RecentFiles.json`): File → Last used search files, `RecentList<string>`,
   at most 15, paths ignore case. One list for query and result files (as in the old program).
   `RecentList.Remove(item)` (lib, uses the list comparer) removes a missing file.
+- `ReopenSearches` (step 30, `ReopenSearches.json`): result windows open on exit. `Entries` =
+  `ReopenEntry(Query, ResultFile, View)` in window order (own query, as it may differ from the query of the
+  result; view options of the header line), `ActiveIndex` / `Active`. `WriteWindows(folder, windows,
+  activeIndex)`: deletes old `Search_*.json` in `folder`, writes `Search_<n>.result.json` per window with a
+  result (none for a window without result: `ResultFile` empty). `ToOpen(reopenAll, activeOnly)`: all, only
+  the active one, or none.
 - `SearchFileLoader.Load(path)` (namespace `Search`, step 29): file of unknown kind → `LoadedSearchFile(Query,
   Result)`: first as result file, then as query file (kind from the file header, not the extension);
   neither → `InvalidDataException`; missing file → `IOException`.
@@ -296,8 +303,15 @@ No admin rights needed: nothing is written next to the exe.
 ### Program start
 `Program.Main` loads `AppConfig`, the `SearchLists` (shows problem texts if any), `LastUsedFiles` and
 `RecentFilesList`, and runs `MainForm`.
-When `MainForm` is first shown and no result form is open, it opens a new empty result form
-with the search properties dialog.
+When `MainForm` is first shown (`OnFirstShown`), it reopens the result forms of the last exit
+(`MainForm.Reopen.cs`, step 30): `ReopenLastSearches()` loads `ReopenSearches`, opens
+`ToOpen(Config.ReopenLastSearchesOnStart, Config.ShowLastResultOnStart)` with `CreateResultForm(query, view)`
+and `ShowResultAsync(result)` (no search; an unreadable result file → the form shows only its query) and
+activates the form that was active. Then, with Settings "Open search form", the dialog opens for the active
+form. Nothing reopened → a new empty result form with the search properties dialog (as before).
+On exit (`OnFormClosing`, only with "Reopen last open searches" or "Show last search result"):
+`SaveOpenSearches()` → `ReopenSearches.WriteWindows(%AppData%\GrepWinUi\Reopen, …)` + `ReopenSearches.json`;
+problems are ignored.
 
 ### MainForm (MDI container)
 - `NewSearch()` (File → New search query, Ctrl+N): `OpenResultForm(lists.StartQuery(config))`.
@@ -474,6 +488,10 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   `TotalFiles`), then searches that list (no second folder walk) with `TotalFiles` = all files.
   Without it one single pass, `TotalFiles` null. A cancelled search shows Files "n / ?" at the end
   (the result has no total; would need a field in `*.result.json`).
+- **Reopen on start** (step 30): "Reopen last open searches" is on by default (old program: off; it then
+  always showed the last result). Windows are saved only when one of the two options is on; old window files
+  are replaced. Each window keeps its own query and view options. Two windows with the same search both
+  come back (no merging). Old program: maximized a single form; not done.
 - **Same search** = same search string + file names + folder name: the user only sees an
   abbreviation in the list, so variants with other options can't be told apart; the newest
   options replace the older entry.

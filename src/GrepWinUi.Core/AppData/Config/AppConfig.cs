@@ -11,16 +11,16 @@ public sealed class AppConfig : IStorable
 
     // --- On program start ---
 
-    /// <summary>Open an empty search form on start.</summary>
+    /// <summary>Open the search properties dialog on start for the reopened active result form.</summary>
     public bool OpenSearchFormOnStart { get; set; } = false;
 
     /// <summary>Run the last search again on start.</summary>
     public bool RepeatLastSearchOnStart { get; set; } = false;
 
-    /// <summary>Reopen the search forms that were open on exit.</summary>
-    public bool ReopenLastSearchesOnStart { get; set; } = false;
+    /// <summary>Reopen the search forms that were open on exit (with their results).</summary>
+    public bool ReopenLastSearchesOnStart { get; set; } = true;
 
-    /// <summary>Show the last saved search result on start (no new search).</summary>
+    /// <summary>Show the search form that was active on exit, with its result (no new search); only without <see cref="ReopenLastSearchesOnStart"/>.</summary>
     public bool ShowLastResultOnStart { get; set; } = false;
 
     // --- While searching ---
