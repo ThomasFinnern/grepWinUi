@@ -18,6 +18,7 @@ public sealed partial class MainForm : Form
     private readonly ObjectStore _store;
     private readonly SearchLists _lists;
     private readonly LastUsedFiles _lastUsed;
+    private readonly RecentFilesList _recentFiles;
     private readonly ToolStripItem _saveQueryItem;
     private readonly ToolStripItem _saveResultItem;
     private readonly ToolStripItem _cancelSearchItem;
@@ -29,12 +30,14 @@ public sealed partial class MainForm : Form
     /// <param name="config">Loaded user settings.</param>
     /// <param name="lists">Loaded recent lists of the search form.</param>
     /// <param name="lastUsed">Last used files (start folders of the file dialogs).</param>
+    /// <param name="recentFiles">File → Last used search files.</param>
     /// <param name="store">Store used to save the settings, lists and last used files.</param>
-    public MainForm(AppConfig config, SearchLists lists, LastUsedFiles lastUsed, ObjectStore store)
+    public MainForm(AppConfig config, SearchLists lists, LastUsedFiles lastUsed, RecentFilesList recentFiles, ObjectStore store)
     {
         Config = config;
         _lists = lists;
         _lastUsed = lastUsed;
+        _recentFiles = recentFiles;
         _store = store;
 
         Version version = typeof(MainForm).Assembly.GetName().Version ?? new Version(0, 0, 0);
@@ -55,6 +58,8 @@ public sealed partial class MainForm : Form
         _saveQueryItem = menuStrip.Items.Find(MainMenu.SaveSearchQueryName, searchAllChildren: true).Single();
         _saveResultItem = menuStrip.Items.Find(MainMenu.SaveSearchResultName, searchAllChildren: true).Single();
         _cancelSearchItem = menuStrip.Items.Find(MainMenu.CancelSearchName, searchAllChildren: true).Single();
+        ToolStripMenuItem recentFilesMenu = (ToolStripMenuItem)menuStrip.Items.Find(MainMenu.RecentFilesName, searchAllChildren: true).Single();
+        recentFilesMenu.DropDownOpening += (_, _) => FillRecentFilesMenu(recentFilesMenu);
         UpdateMenuState();
         MdiChildActivate += (_, _) =>
         {
@@ -123,14 +128,41 @@ public sealed partial class MainForm : Form
         return form;
     }
 
-    /// <summary>File → Open search query: a query file opens in a new result form with its search properties dialog.</summary>
+    /// <summary>
+    /// File → Open search query: a query file opens in a new result form with its search properties dialog
+    /// (a form that already shows the same search is used instead: <see cref="OpenQuery"/>).
+    /// </summary>
     private void OpenSearchQuery()
     {
         if (ReadQueryFile("Open search query") is SearchQuery query)
         {
+            OpenQuery(query);
+        }
+    }
+
+    /// <summary>
+    /// Opens <paramref name="query"/> with its search properties dialog: in the result form that already shows
+    /// the same search (<see cref="SearchQueryComparer"/>; it gets the query and keeps its result, a running
+    /// search is stopped), else in a new result form.
+    /// </summary>
+    private void OpenQuery(SearchQuery query)
+    {
+        if (FormWithSameSearch(query) is ResultForm form)
+        {
+            form.CancelSearch();
+            form.ApplySearch(query, form.ViewOptions);
+            form.Activate();
+            ShowSearchProperties(form);
+        }
+        else
+        {
             OpenResultForm(query);
         }
     }
+
+    /// <summary>The open result form that shows the same search as <paramref name="query"/>, or null.</summary>
+    private ResultForm? FormWithSameSearch(SearchQuery query) =>
+        SearchQueryComparer.FindSame(MdiChildren.OfType<ResultForm>(), form => form.Query, query);
 
     /// <summary>
     /// File → Load search query: a query file replaces the query of the active result form
@@ -231,11 +263,12 @@ public sealed partial class MainForm : Form
         return _lastUsed.FileDialogFolder(appFolder);
     }
 
-    /// <summary>Remembers the query file as last used and saves <c>LastUsed.json</c>.</summary>
+    /// <summary>Remembers the query file as last used, puts it on top of the recent files and saves both.</summary>
     private void RememberQueryFile(string path)
     {
         _lastUsed.RememberSearchQueryFile(path);
         SaveLastUsed();
+        AddRecentFile(path);
     }
 
     /// <summary>Saves <c>LastUsed.json</c> (problems are ignored: only a start folder is lost).</summary>

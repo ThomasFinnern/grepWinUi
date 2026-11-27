@@ -19,6 +19,13 @@ public sealed class SearchQueryComparer : IEqualityComparer<SearchQuery>
             && string.Equals(x.FileNames, y.FileNames, StringComparison.OrdinalIgnoreCase)
             && string.Equals(x.FolderName, y.FolderName, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// First of <paramref name="items"/> whose query (<paramref name="queryOf"/>) is the same search as
+    /// <paramref name="query"/>, else default (e.g. the open result form showing that search).
+    /// </summary>
+    public static T? FindSame<T>(IEnumerable<T> items, Func<T, SearchQuery> queryOf, SearchQuery query) where T : class =>
+        items.FirstOrDefault(item => Instance.Equals(queryOf(item), query));
+
     /// <inheritdoc/>
     public int GetHashCode(SearchQuery obj) => HashCode.Combine(
         StringComparer.Ordinal.GetHashCode(obj.SearchString),

@@ -38,6 +38,7 @@ No admin rights needed: nothing is written next to the exe.
 |---|---|
 | `AppConfig` | `Config.json` (Defaults file: `src/GrepWinUi.App/Defaults/Config.json`, a test keeps it equal to the built-in defaults) |
 | `LastUsedFiles` | `LastUsed.json` |
+| `RecentFilesList` | `RecentFiles.json` (File → Last used search files) |
 | `SearchStringList` | `SearchStrings.json` (`Items` = used, `Fixed` = fixed tokens) |
 | `FileNamesList` | `FileNames.json` (`Items` = used, `Fixed` = fixed tokens) |
 | `FolderNameList` | `FolderNames.json` (`Items` = used, `Fixed` = fixed tokens) |
@@ -95,6 +96,14 @@ No admin rights needed: nothing is written next to the exe.
   `FileDialogFolder(appFolder)`: start folder of all file dialogs = folder of `LastUsedFile`,
   at the beginning the app's user folder. `StartFolder(lastFile, fallback)`: folder of the last
   file if it exists, else the fallback. `OrLastUsedFile(file)`: the file if set, else `LastUsedFile`.
+- `RecentFilesList` (step 29, `RecentFiles.json`): File → Last used search files, `RecentList<string>`,
+  at most 15, paths ignore case. One list for query and result files (as in the old program).
+  `RecentList.Remove(item)` (lib, uses the list comparer) removes a missing file.
+- `SearchFileLoader.Load(path)` (namespace `Search`, step 29): file of unknown kind → `LoadedSearchFile(Query,
+  Result)`: first as result file, then as query file (kind from the file header, not the extension);
+  neither → `InvalidDataException`; missing file → `IOException`.
+- `SearchQueryComparer.FindSame(items, queryOf, query)` (step 29): first item with the same search
+  (used for the open result forms).
 
 ### AppData/Search
 - `SearchQuery`: all inputs of the search properties form.
@@ -284,8 +293,8 @@ No admin rights needed: nothing is written next to the exe.
 ## 5. App
 
 ### Program start
-`Program.Main` loads `AppConfig`, the `SearchLists` (shows problem texts if any) and `LastUsedFiles`,
-and runs `MainForm`.
+`Program.Main` loads `AppConfig`, the `SearchLists` (shows problem texts if any), `LastUsedFiles` and
+`RecentFilesList`, and runs `MainForm`.
 When `MainForm` is first shown and no result form is open, it opens a new empty result form
 with the search properties dialog.
 
@@ -293,12 +302,24 @@ with the search properties dialog.
 - `NewSearch()` (File → New search query, Ctrl+N): `OpenResultForm(lists.StartQuery(config))`.
 - `OpenResultForm(query)`: new `ResultForm` with the query and a copy of `config.ResultView`,
   then the search properties dialog over it.
-- `OpenSearchQuery()` (File → Open search query, Ctrl+O): query file → `OpenResultForm(query)`.
+- `OpenSearchQuery()` (File → Open search query, Ctrl+O): query file → `OpenQuery(query)`.
+- **Same search already open** (step 29, `FormWithSameSearch(query)` = `SearchQueryComparer.FindSame` over
+  the open result forms): `OpenQuery(query)` and `ShowResult(result)` use that form instead of a new one:
+  a running search is stopped, the form gets the opened query (`ApplySearch`, its view options stay) and is
+  activated; a query keeps the shown result and opens the dialog, a result is shown with `ShowResultAsync`.
+  Old program: closed the form and opened a new one, compared search string, file names and some options.
+  Load search query is unchanged (always the active form).
+- File → Last used search files (step 29, `MainForm.RecentFiles.cs`): menu item `MainMenu.RecentFilesName`,
+  filled on `DropDownOpening` (full paths, "(empty)" without files). Click → `OpenRecentFile(path)`:
+  missing file → message and removed from the list (old program: nothing happened);
+  `SearchFileLoader.Load` → `ShowResult` or `OpenQuery`. `RememberQueryFile` / `RememberResultFile`
+  (Save / Open / Load search query, Save / Open search result, menu) also put the file on top of the list
+  and save `RecentFiles.json` (problems ignored).
 - `LoadSearchQuery()` (File → Load search query): query file → `form.ApplySearch(query, form.ViewOptions)`
   on the active result form (line counts stay), then the dialog; without one like Open.
 - `OpenSearchResult()` / `SaveSearchResult()` (File → Open / Save search result, in
-  `MainForm.ResultFiles.cs`): Open loads a `*.result.json` into a new result form
-  (`CreateResultForm(result.Query.Copy())` + `ShowResultAsync(result)`, no dialog, no search);
+  `MainForm.ResultFiles.cs`): Open loads a `*.result.json` with `ShowResult(result)` into a new result form
+  (or the form with the same search; no dialog, no search);
   Save writes the active form's `Result` (greyed out without one; `ResultForm.ResultChanged` updates
   the menu). Both remember the file with `LastUsedFiles.RememberResultFile` (shared start folder).
 - `SaveSearchQuery()` (File → Save search query, Alt+S): active form's `Query` → file.
@@ -466,10 +487,8 @@ program, Search string token, File name token, Folder name token. Works on `AppC
 
 Taken from `netGrepWin.code.md`; details per step in the roadmap.
 
-- **File menu:** Open (select from last search queries), close this / all / all but this,
-  open/save search results (search input + file list + token lines), each save adds to the
-  last used files list; Last used search queries (click opens the query in a search form and
-  starts the search); Last used search files (click opens the saved result without searching).
+- **File menu:** Open (select from last search queries), close this / all / all but this;
+  Last used search queries (click opens the query in a search form and starts the search, step 29b).
 - **Search menu:** Search in Files.
 - **Settings:** edit the two CSS files (step 33).
 - **MDI commands and keys** act on the active result form.

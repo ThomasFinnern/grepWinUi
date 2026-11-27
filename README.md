@@ -119,6 +119,12 @@ redesign from start with the help of AI
 - **File → Save search result:** saves the result of the active window to a `*.result.json` file:
   the search parameters, the file list and the matching lines (with line numbers and hit positions),
   plus the counts and problems. Greyed out while the active window has no result.
+- **File → Last used search files:** the search query and search result files you saved, opened or
+  loaded last (newest on top, up to 15). A click opens the file: a result shows its saved lists, a query
+  opens with its search properties dialog. A file that no longer exists is removed from the list.
+- **Same search already open:** opening a query or result file (File → Open …, Last used search files)
+  whose search (search string, file names, folder) is already shown in a window uses that window
+  instead of a new one. A query keeps the shown result until you search again.
 - **File → Open search result:** opens a saved `*.result.json` file in a new result window and shows
   its lists without searching again. Both use the same start folder as the search query files.
 - **Program start:** without an open result window, a new empty one opens together with its

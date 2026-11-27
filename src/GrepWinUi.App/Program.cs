@@ -30,7 +30,9 @@ internal static class Program
         }
 
         LastUsedFiles lastUsed = store.Load<LastUsedFiles>().Value;
+        RecentFilesList recentFiles = store.Load<RecentFilesList>().Value;
+        recentFiles.TrimToMaxCount();
 
-        Application.Run(new MainForm(config.Value, lists, lastUsed, store));
+        Application.Run(new MainForm(config.Value, lists, lastUsed, recentFiles, store));
     }
 }

@@ -35,7 +35,24 @@ public sealed partial class MainForm
         }
 
         RememberResultFile(dialog.FileName);
-        ResultForm form = CreateResultForm(result.Query.Copy());
+        ShowResult(result);
+    }
+
+    /// <summary>
+    /// Shows a loaded result: in the result form that already shows the same search (it gets the
+    /// query of the result, a running search is stopped), else in a new result form.
+    /// </summary>
+    private void ShowResult(SearchResult result)
+    {
+        if (FormWithSameSearch(result.Query) is ResultForm form)
+        {
+            form.ApplySearch(result.Query.Copy(), form.ViewOptions);
+            form.Activate();
+        }
+        else
+        {
+            form = CreateResultForm(result.Query.Copy());
+        }
         _ = form.ShowResultAsync(result);
     }
 
@@ -72,10 +89,14 @@ public sealed partial class MainForm
         }
     }
 
-    /// <summary>Remembers the result file as last used (start folder of the file dialogs) and saves <c>LastUsed.json</c>.</summary>
+    /// <summary>
+    /// Remembers the result file as last used (start folder of the file dialogs), puts it on top of the
+    /// recent files and saves both.
+    /// </summary>
     private void RememberResultFile(string path)
     {
         _lastUsed.RememberResultFile(path);
         SaveLastUsed();
+        AddRecentFile(path);
     }
 }

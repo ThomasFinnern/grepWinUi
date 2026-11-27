@@ -11,6 +11,9 @@ internal static class MainMenu
     /// <summary>Name of File → Save search result (enabled only while the active result form has a result).</summary>
     public const string SaveSearchResultName = "saveSearchResult";
 
+    /// <summary>Name of File → Last used search files (filled by the main window when it opens).</summary>
+    public const string RecentFilesName = "recentFiles";
+
     /// <summary>Name of Search → Cancel Search (enabled only while the active result form searches).</summary>
     public const string CancelSearchName = "cancelSearch";
 
@@ -66,7 +69,7 @@ internal static class MainMenu
             Item("Save as rtf")),
         Separator(),
         Menu("Last used search queries", EmptyListItem()),
-        Menu("Last used search files", EmptyListItem()),
+        Named(Menu("Last used search files", EmptyListItem()), RecentFilesName),
         Separator(),
         Item("Exit", onClick: actions.ExitApp));
 
@@ -157,7 +160,7 @@ internal static class MainMenu
     }
 
     /// <summary>Disabled placeholder so an empty "last used" list still shows its submenu arrow.</summary>
-    private static ToolStripMenuItem EmptyListItem() => new("(empty)") { Enabled = false };
+    public static ToolStripMenuItem EmptyListItem() => new("(empty)") { Enabled = false };
 
     private static ToolStripSeparator Separator() => new();
 }

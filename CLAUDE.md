@@ -82,7 +82,8 @@ tests/lib_RecentList.Tests/  xUnit tests for lib_RecentList
     Standard data file: `src/GrepWinUi.App/Defaults/Config.json` (copied to `<exe>\Defaults\`);
     a test checks it equals the built-in defaults, so keep both in sync.
   - `AppData/Session/`: state that changes often and must survive a restart
-    (`LastUsedFiles` → `LastUsed.json`: last query/result/HTML file, fallback to the newest one).
+    (`LastUsedFiles` → `LastUsed.json`: last query/result/HTML file, fallback to the newest one;
+    `RecentFilesList` → `RecentFiles.json`: File → Last used search files).
   - `AppData/Search/`: `SearchQuery` (all inputs of the search form, no line counts; `Copy()`,
     `CreateDefault(config)`), `SearchQueryComparer` (same search = same search string,
     file names and folder name; options not compared, so newer options replace older ones) and the recent-first lists
@@ -169,7 +170,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–28 (with 13a, 13b, 16b, 16c) are done.
+One step = one session. Steps 1–29 (with 13a, 13b, 16b, 16c) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 2. [x] Install .NET SDK (11.0.100 installed)
 3. [x] Install VS Code "C#" extension
@@ -252,9 +253,11 @@ Second iteration: deepen step by step (each step removes the strike-through of t
 27. [x] Result view options: Title, Line numbers, Fixed font, File names, File contents, Whole line,
        Double blanks; styling like in the old program
 28. [x] Result clicks: click on a file jumps to its lines and marks its row (double click: step 37)
-29. [ ] Recent result files list (File → Last used search files); "same search already open →
+29. [x] Recent result files list (File → Last used search files); "same search already open →
        reload that window" as in the old program. (File → Save / Open search result with
        `*.result.json` was done in between after step 17.)
+29b. [ ] File → Last used search queries: submenu filled from the past queries list (`SearchQueryList`);
+       a click opens the query in a search form (old program: and starts the search)
 30. [ ] Reopen the last forms on start; the dialog then opens for the last active result form
        if "Open search form" is set in Settings (On start of program)
 31. [ ] Search in found files ("Only in files of current result", Search → Search in Files),
@@ -277,5 +280,4 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 29: recent result files list (File → Last used search files); same search already open →
-reload that window.
+Step 29b: File → Last used search queries (submenu from the past queries list).

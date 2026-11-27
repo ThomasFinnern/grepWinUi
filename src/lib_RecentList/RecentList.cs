@@ -56,6 +56,18 @@ public abstract class RecentList<TItem> : StoredList<TItem>
         TrimToMaxCount();
     }
 
+    /// <summary>Removes the item equal to <paramref name="item"/> (comparer from the constructor); false if it isn't there.</summary>
+    public bool Remove(TItem item)
+    {
+        int index = Items.FindIndex(existing => _comparer.Equals(existing, item));
+        if (index < 0)
+        {
+            return false;
+        }
+        Items.RemoveAt(index);
+        return true;
+    }
+
     /// <summary>Removes the oldest items beyond <see cref="MaxCount"/> (e.g. after loading a longer file).</summary>
     public void TrimToMaxCount()
     {

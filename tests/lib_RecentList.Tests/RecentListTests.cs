@@ -62,6 +62,18 @@ public sealed class RecentListTests : IDisposable
     }
 
     [Fact]
+    public void Remove_UsesComparer_FalseWhenMissing()
+    {
+        TestRecentFolders list = new();
+        list.Add(@"c:\a");
+        list.Add(@"c:\b");
+
+        Assert.True(list.Remove(@"C:\A"));
+        Assert.False(list.Remove(@"c:\x"));
+        Assert.Equal([@"c:\b"], list.Items);
+    }
+
+    [Fact]
     public void Add_BeyondStandardCount_DropsOldest()
     {
         TestRecentStrings list = new();
