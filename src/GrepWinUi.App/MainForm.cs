@@ -60,6 +60,8 @@ public sealed partial class MainForm : Form
         _cancelSearchItem = menuStrip.Items.Find(MainMenu.CancelSearchName, searchAllChildren: true).Single();
         ToolStripMenuItem recentFilesMenu = (ToolStripMenuItem)menuStrip.Items.Find(MainMenu.RecentFilesName, searchAllChildren: true).Single();
         recentFilesMenu.DropDownOpening += (_, _) => FillRecentFilesMenu(recentFilesMenu);
+        ToolStripMenuItem recentQueriesMenu = (ToolStripMenuItem)menuStrip.Items.Find(MainMenu.RecentQueriesName, searchAllChildren: true).Single();
+        recentQueriesMenu.DropDownOpening += (_, _) => FillRecentQueriesMenu(recentQueriesMenu);
         UpdateMenuState();
         MdiChildActivate += (_, _) =>
         {

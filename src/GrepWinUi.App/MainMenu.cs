@@ -14,6 +14,9 @@ internal static class MainMenu
     /// <summary>Name of File → Last used search files (filled by the main window when it opens).</summary>
     public const string RecentFilesName = "recentFiles";
 
+    /// <summary>Name of File → Last used search queries (filled by the main window when it opens).</summary>
+    public const string RecentQueriesName = "recentQueries";
+
     /// <summary>Name of Search → Cancel Search (enabled only while the active result form searches).</summary>
     public const string CancelSearchName = "cancelSearch";
 
@@ -68,7 +71,7 @@ internal static class MainMenu
             Item("Save as pdf"),
             Item("Save as rtf")),
         Separator(),
-        Menu("Last used search queries", EmptyListItem()),
+        Named(Menu("Last used search queries", EmptyListItem()), RecentQueriesName),
         Named(Menu("Last used search files", EmptyListItem()), RecentFilesName),
         Separator(),
         Item("Exit", onClick: actions.ExitApp));

@@ -122,7 +122,10 @@ redesign from start with the help of AI
 - **File → Last used search files:** the search query and search result files you saved, opened or
   loaded last (newest on top, up to 15). A click opens the file: a result shows its saved lists, a query
   opens with its search properties dialog. A file that no longer exists is removed from the list.
-- **Same search already open:** opening a query or result file (File → Open …, Last used search files)
+- **File → Last used search queries:** your past searches (newest on top, up to 15), shown as
+  `search string :: file names :: folder`. A click opens the search with its search properties dialog;
+  press Enter (Start search) to search.
+- **Same search already open:** opening a search (File → Open …, Last used search files / queries)
   whose search (search string, file names, folder) is already shown in a window uses that window
   instead of a new one. A query keeps the shown result until you search again.
 - **File → Open search result:** opens a saved `*.result.json` file in a new result window and shows

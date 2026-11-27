@@ -170,7 +170,7 @@ See file doc\netGrepWin\netGrepWin.code.md and the other files in folder doc\net
 
 
 ## Roadmap
-One step = one session. Steps 1–29 (with 13a, 13b, 16b, 16c) are done.
+One step = one session. Steps 1–29 (with 13a, 13b, 16b, 16c, 29b) are done.
 1. [x] Choose language/toolchain: C# WinForms on .NET 10, VS Code (see Technology)
 2. [x] Install .NET SDK (11.0.100 installed)
 3. [x] Install VS Code "C#" extension
@@ -256,8 +256,8 @@ Second iteration: deepen step by step (each step removes the strike-through of t
 29. [x] Recent result files list (File → Last used search files); "same search already open →
        reload that window" as in the old program. (File → Save / Open search result with
        `*.result.json` was done in between after step 17.)
-29b. [ ] File → Last used search queries: submenu filled from the past queries list (`SearchQueryList`);
-       a click opens the query in a search form (old program: and starts the search)
+29b. [x] File → Last used search queries: submenu filled from the past queries list (`SearchQueryList`);
+       a click opens the query with its search properties dialog (same search open: that form)
 30. [ ] Reopen the last forms on start; the dialog then opens for the last active result form
        if "Open search form" is set in Settings (On start of program)
 31. [ ] Search in found files ("Only in files of current result", Search → Search in Files),
@@ -280,4 +280,5 @@ fixed-width/delimited field search, import of old `*.Res` files, group configs.
 
 
 ## Current step
-Step 29b: File → Last used search queries (submenu from the past queries list).
+Step 30: reopen the last forms on start; the dialog then opens for the last active result form
+if "Open search form" is set in Settings (On start of program).

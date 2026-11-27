@@ -1,18 +1,32 @@
+using GrepWinUi.Core;
+using GrepWinUi.Core.AppData.Search;
 using GrepWinUi.Core.Search;
 
 namespace GrepWinUi.App;
 
-/// <summary>Main window: File → Last used search files.</summary>
+/// <summary>Main window: File → Last used search files and File → Last used search queries.</summary>
 public sealed partial class MainForm
 {
     /// <summary>Fills File → Last used search files with the full paths, newest on top ("(empty)" without files).</summary>
-    private void FillRecentFilesMenu(ToolStripMenuItem menu)
+    private void FillRecentFilesMenu(ToolStripMenuItem menu) =>
+        FillListMenu(menu, _recentFiles.Items, path => path, OpenRecentFile);
+
+    /// <summary>
+    /// Fills File → Last used search queries from the past queries (newest on top), each shown as
+    /// "search string :: file names :: folder". A click opens a copy of the query with
+    /// <see cref="OpenQuery"/> (form with the same search or a new one, then the search properties dialog).
+    /// </summary>
+    private void FillRecentQueriesMenu(ToolStripMenuItem menu) =>
+        FillListMenu(menu, _lists.Queries.Items, SearchQueryText.Title, query => OpenQuery(query.Copy()));
+
+    /// <summary>Submenu with one item per list entry (text shown as is), or "(empty)" for an empty list.</summary>
+    private static void FillListMenu<T>(ToolStripMenuItem menu, IEnumerable<T> entries, Func<T, string> text, Action<T> open)
     {
         menu.DropDownItems.Clear();
-        foreach (string path in _recentFiles.Items)
+        foreach (T entry in entries.ToList())
         {
-            ToolStripMenuItem item = new(path);
-            item.Click += (_, _) => OpenRecentFile(path);
+            ToolStripMenuItem item = new(MenuText.Literal(text(entry)));
+            item.Click += (_, _) => open(entry);
             menu.DropDownItems.Add(item);
         }
         if (menu.DropDownItems.Count == 0)

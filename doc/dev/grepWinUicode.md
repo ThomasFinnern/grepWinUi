@@ -287,7 +287,8 @@ No admin rights needed: nothing is written next to the exe.
 
 ### Other
 - `AppInfo`: product name, main window title (`grepWinUi 1.2.3`).
-- `MenuText.Display`: adds the `*` to menu items without a function.
+- `MenuText.Display`: adds the `*` to menu items without a function. `MenuText.Literal`: text shown as is
+  ("&" doubled), for list entries in menus.
 - `FocusOrder`: tab order helpers (main inputs first).
 
 ## 5. App
@@ -315,6 +316,11 @@ with the search properties dialog.
   `SearchFileLoader.Load` → `ShowResult` or `OpenQuery`. `RememberQueryFile` / `RememberResultFile`
   (Save / Open / Load search query, Save / Open search result, menu) also put the file on top of the list
   and save `RecentFiles.json` (problems ignored).
+- File → Last used search queries (step 29b, same file): menu item `MainMenu.RecentQueriesName`, filled on
+  `DropDownOpening` from `SearchQueryList` (past queries, newest on top), text `SearchQueryText.Title(query)`.
+  Click → `OpenQuery(query.Copy())` (form with the same search or a new one, then the dialog; old program:
+  new empty form, no dialog, no search). Both submenus use `FillListMenu` with `MenuText.Literal`
+  (doubles "&", else WinForms hides it as access key mark).
 - `LoadSearchQuery()` (File → Load search query): query file → `form.ApplySearch(query, form.ViewOptions)`
   on the active result form (line counts stay), then the dialog; without one like Open.
 - `OpenSearchResult()` / `SaveSearchResult()` (File → Open / Save search result, in
@@ -487,8 +493,7 @@ program, Search string token, File name token, Folder name token. Works on `AppC
 
 Taken from `netGrepWin.code.md`; details per step in the roadmap.
 
-- **File menu:** Open (select from last search queries), close this / all / all but this;
-  Last used search queries (click opens the query in a search form and starts the search, step 29b).
+- **File menu:** Open (select from last search queries), close this / all / all but this.
 - **Search menu:** Search in Files.
 - **Settings:** edit the two CSS files (step 33).
 - **MDI commands and keys** act on the active result form.

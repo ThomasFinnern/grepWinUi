@@ -1,4 +1,4 @@
-# netGrepWin: last used search files and "same search already open"
+# netGrepWin: last used search files / queries and "same search already open"
 
 Notes from reading the old code (read only), for step 29 of grepWinUi.
 
@@ -22,3 +22,11 @@ Notes from reading the old code (read only), for step 29 of grepWinUi.
 - `OpenSearchFromSearchResult` / `OpenSearchFromSearchQuery`: an open form with the same ID is closed
   (`CloseRequest`, "Reload") and a new form opens (ToDo in the code: ask about unsaved changes).
   On the automatic reopen at program start an already open search is not loaded again.
+
+## Menu File → Last used search queries (step 29b)
+- `lastUsedSearchQueriesToolStripMenuItem_Click`: filled from `Global.LastUsedSearchQueries.TokenList`
+  (newest first), item text `IdSearchQueryDistinguishView()` (search string :: file types :: option codes);
+  both "last used" submenus are refilled when the File menu opens (`fileToolStripMenuItem_Click`).
+- Click (index of the item in the submenu) → `OpenSearchFromSearchQuery(query)`: a form with the same
+  search is closed, a new form opens with the query and no result. No search is started and no dialog
+  opens (the program description says "starts the search", the code does not).
