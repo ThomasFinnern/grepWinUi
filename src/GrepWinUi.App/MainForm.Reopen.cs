@@ -42,16 +42,19 @@ public sealed partial class MainForm
     /// Program start: opens the result forms of the last exit (all with Settings "Reopen last open searches",
     /// only the active one with "Show last search result"), each with its query, view options and saved
     /// result (no new search); the active one is active again. A result file that can't be read is skipped
-    /// (the form shows its query without result). False when no form was opened.
+    /// (the form shows its query without result). Returns the active form (the last opened one when none was
+    /// active on exit), null when no form was opened.
     /// </summary>
-    private bool ReopenLastSearches()
+    private ResultForm? ReopenLastSearches()
     {
         ReopenSearches reopen = _store.Load<ReopenSearches>().Value;
         IReadOnlyList<ReopenEntry> entries = reopen.ToOpen(Config.ReopenLastSearchesOnStart, Config.ShowLastResultOnStart);
         ResultForm? toActivate = null;
+        ResultForm? last = null;
         foreach (ReopenEntry entry in entries)
         {
             ResultForm form = CreateResultForm(entry.Query.Copy(), entry.View);
+            last = form;
             if (ReadReopenResult(entry.ResultFile) is SearchResult result)
             {
                 _ = form.ShowResultAsync(result);
@@ -62,7 +65,7 @@ public sealed partial class MainForm
             }
         }
         toActivate?.Activate();
-        return entries.Count > 0;
+        return toActivate ?? last;
     }
 
     /// <summary>Result of a window to reopen; null without a file or when it can't be read.</summary>

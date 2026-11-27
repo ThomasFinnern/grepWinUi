@@ -123,7 +123,9 @@ redesign from start with the help of AI
   their results, search and header line settings (no new search); the window that was active is active
   again. Settings → On start of program: **Reopen last open searches** (on by default) reopens all windows,
   **Show last search result** only the active one, **Open search form** then opens the search properties
-  dialog for it. Without windows to reopen a new window with the search properties dialog opens.
+  dialog for it. Without windows to reopen a new window with your last search and its search properties
+  dialog opens. **Repeat last search** searches the active window (or that new window) again at once,
+  without the dialog.
 - **File → Last used search files:** the search query and search result files you saved, opened or
   loaded last (newest on top, up to 15). A click opens the file: a result shows its saved lists, a query
   opens with its search properties dialog. A file that no longer exists is removed from the list.

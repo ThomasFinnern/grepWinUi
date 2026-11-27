@@ -307,8 +307,11 @@ When `MainForm` is first shown (`OnFirstShown`), it reopens the result forms of 
 (`MainForm.Reopen.cs`, step 30): `ReopenLastSearches()` loads `ReopenSearches`, opens
 `ToOpen(Config.ReopenLastSearchesOnStart, Config.ShowLastResultOnStart)` with `CreateResultForm(query, view)`
 and `ShowResultAsync(result)` (no search; an unreadable result file → the form shows only its query) and
-activates the form that was active. Then, with Settings "Open search form", the dialog opens for the active
-form. Nothing reopened → a new empty result form with the search properties dialog (as before).
+activates the form that was active (returns it, or the last opened one). Nothing reopened → a new result form
+with `lists.StartQuery(config)`. Then `StartActions.Decide(config, reopened, searchString)` (Core,
+`AppData/Config/StartAction.cs`, step 30b): "Repeat last search" with a search string → `RunSearchAsync` on
+that form at once (no dialog; the query is not added to the past queries again); else `OpenDialog` (a new
+form always, a reopened one only with "Open search form") or `None`.
 On exit (`OnFormClosing`, only with "Reopen last open searches" or "Show last search result"):
 `SaveOpenSearches()` → `ReopenSearches.WriteWindows(%AppData%\GrepWinUi\Reopen, …)` + `ReopenSearches.json`;
 problems are ignored.
@@ -492,6 +495,9 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   always showed the last result). Windows are saved only when one of the two options is on; old window files
   are replaced. Each window keeps its own query and view options. Two windows with the same search both
   come back (no merging). Old program: maximized a single form; not done.
+- **Repeat last search** (step 30b): wins over "Open search form"; searches the active reopened form again
+  (old program: only a new form, reopened forms were never searched again). An empty search string → as
+  without the option (dialog / nothing).
 - **Same search** = same search string + file names + folder name: the user only sees an
   abbreviation in the list, so variants with other options can't be told apart; the newest
   options replace the older entry.

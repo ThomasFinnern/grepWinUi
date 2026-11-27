@@ -84,9 +84,10 @@ public sealed partial class MainForm : Form
         _statusBar.ShowStatus((ActiveMdiChild as ResultForm)?.Status ?? SearchStatus.Idle);
 
     /// <summary>
-    /// Program start: reopens the result forms of the last exit (<see cref="ReopenLastSearches"/>); with Settings
-    /// "Open search form" the search properties dialog then opens for the active one. Nothing reopened:
-    /// a new empty result form with its search properties dialog.
+    /// Program start: reopens the result forms of the last exit (<see cref="ReopenLastSearches"/>); nothing
+    /// reopened: a new result form with the newest past query. Then, by <see cref="StartActions.Decide"/>:
+    /// Settings "Repeat last search" runs the search of the active form at once; else the search properties
+    /// dialog opens (for a reopened form only with "Open search form").
     /// </summary>
     private void OnFirstShown()
     {
@@ -95,13 +96,17 @@ public sealed partial class MainForm : Form
             return;
         }
 
-        if (!ReopenLastSearches())
+        ResultForm? reopened = ReopenLastSearches();
+        ResultForm active = reopened ?? CreateResultForm(_lists.StartQuery(Config));
+        switch (StartActions.Decide(Config, reopened is not null, active.Query.SearchString))
         {
-            NewSearch();
-        }
-        else if (Config.OpenSearchFormOnStart && ActiveMdiChild is ResultForm active)
-        {
-            ShowSearchProperties(active);
+            case StartAction.Search:
+                // Runs in the background; RunSearchAsync shows its own problems and never throws.
+                _ = active.RunSearchAsync(Config.ShowFileNamesWhileSearching);
+                break;
+            case StartAction.OpenDialog:
+                ShowSearchProperties(active);
+                break;
         }
     }
 

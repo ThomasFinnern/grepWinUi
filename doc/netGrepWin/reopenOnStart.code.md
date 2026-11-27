@@ -19,8 +19,11 @@ Notes from reading the old code (read only), for step 30 of grepWinUi.
 
 ## Settings page "On start of program" (`CtrlOptionOnStartOfProgram`)
 - `bDoPopUpSearchOnStart` ("Open search form"): stored, set from the command line, not used on start.
-- `bDoRepeatLastSearchOnStart`: the first new search form starts its search at once (no dialog,
-  `bDoRequestRestartSearch`) — grepWinUi step 30b.
+- `bDoRepeatLastSearchOnStart` (`frmNetGrepWinProgram`, new search form, flag
+  `bIsFirstStartOfDoRepeatLastSearchOnStart`): only for the first new search form after start, with the last
+  used query (`clsSearchProperties.LoadClassOrCreateUserFile`): `RequestSearchProperties = false`,
+  `bDoRequestRestartSearch = true`, so it searches at once without dialog. Reopened forms are not searched
+  again. grepWinUi step 30b.
 - `bDoLoadLastOpenSearchesOnStart` ("Reopen last open searches"): see above.
 - `bDoViewLastUsedSearchResultOnStart` ("Show last search result"): stored only; the old program showed
   the last result whenever it did not reopen all searches.

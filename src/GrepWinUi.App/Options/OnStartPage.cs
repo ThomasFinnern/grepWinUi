@@ -1,5 +1,4 @@
 using GrepWinUi.Core.AppData.Config;
-using static GrepWinUi.App.Search.SearchFormControls;
 
 namespace GrepWinUi.App.Options;
 
@@ -7,7 +6,7 @@ namespace GrepWinUi.App.Options;
 internal sealed class OnStartPage : OptionsPage
 {
     private readonly CheckBox _openSearchForm = Check("Open search form");
-    private readonly CheckBox _repeatLastSearch = NoEffect(Check("Repeat last search"));
+    private readonly CheckBox _repeatLastSearch = Check("Repeat last search");
     private readonly CheckBox _reopenLastSearches = Check("Reopen last open searches");
     private readonly CheckBox _showLastResult = Check("Show last search result");
 
