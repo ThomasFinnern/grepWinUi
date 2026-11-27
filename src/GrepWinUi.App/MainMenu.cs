@@ -17,6 +17,9 @@ internal static class MainMenu
     /// <summary>Name of File → Last used search queries (filled by the main window when it opens).</summary>
     public const string RecentQueriesName = "recentQueries";
 
+    /// <summary>Name of Search → Search in Files (enabled only while the active result form has a result).</summary>
+    public const string SearchInFilesName = "searchInFiles";
+
     /// <summary>Name of Search → Cancel Search (enabled only while the active result form searches).</summary>
     public const string CancelSearchName = "cancelSearch";
 
@@ -78,8 +81,8 @@ internal static class MainMenu
 
     private static ToolStripMenuItem CreateSearchMenu(MainMenuActions actions) => Menu("&Search",
         Item("Search", Keys.Control | Keys.F, actions.EditSearch),
-        Item("Restart search", Keys.Alt | Keys.R),
-        Item("Search in Files"),
+        Item("Restart search", Keys.Alt | Keys.R, actions.RestartSearch),
+        Named(Item("Search in Files", onClick: actions.SearchInFiles), SearchInFilesName),
         Separator(),
         Item("Replace"),
         Separator(),
@@ -173,6 +176,8 @@ internal static class MainMenu
 /// <param name="ExitApp">File → Exit.</param>
 /// <param name="NewSearch">File → New search query: opens a new result form and its search properties.</param>
 /// <param name="EditSearch">Search → Search: search properties of the active result form.</param>
+/// <param name="RestartSearch">Search → Restart search: the active form searches again without dialog.</param>
+/// <param name="SearchInFiles">Search → Search in Files: dialog with "Only in files of current result" ticked.</param>
 /// <param name="OpenSearchQuery">File → Open search query: query file in a new result form.</param>
 /// <param name="LoadSearchQuery">File → Load search query: query file replaces the active form's query.</param>
 /// <param name="SaveSearchQuery">File → Save search query: active form's query to a file.</param>
@@ -188,6 +193,8 @@ internal sealed record MainMenuActions(
     Action ExitApp,
     Action NewSearch,
     Action EditSearch,
+    Action RestartSearch,
+    Action SearchInFiles,
     Action OpenSearchQuery,
     Action LoadSearchQuery,
     Action SaveSearchQuery,

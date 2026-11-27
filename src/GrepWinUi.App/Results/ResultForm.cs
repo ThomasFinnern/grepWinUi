@@ -145,6 +145,7 @@ internal sealed class ResultForm : Form
     /// A running search of this form is cancelled first. Never throws (problems are shown in the panes).
     /// While it runs, <see cref="Status"/> is updated from the progress reports and every 250 ms (time).
     /// </summary>
+    /// With "Only in files of current result" only the files of <see cref="Result"/> are read (<see cref="SearchScope"/>).
     /// <param name="showFileNames">Settings "Show file names in status bar": Info shows the file being read.</param>
     public async Task RunSearchAsync(bool showFileNames)
     {
@@ -152,6 +153,7 @@ internal sealed class ResultForm : Form
         using CancellationTokenSource search = new();
         _search = search;
         SearchQuery query = Query;
+        SearchScope scope = SearchScope.Of(query, Result);
         Stopwatch time = Stopwatch.StartNew();
         SearchProgress? lastProgress = null;
         void UpdateRunningStatus()
@@ -171,8 +173,9 @@ internal sealed class ResultForm : Form
         _statusTimer.Start();
         SetResult(null);
         UpdateRunningStatus();
+        string where = scope.OnlyFiles is null ? $"'{Query.FolderName}'" : "the files of the previous result";
         await ShowPagesAsync(
-            HintPage(ResultCss.FileListFileName, $"Searching '{Query.SearchString}' in '{Query.FolderName}' …"),
+            HintPage(ResultCss.FileListFileName, $"Searching '{Query.SearchString}' in {where} …"),
             HintPage(ResultCss.MatchingLinesFileName, ""));
 
         string fileList;
@@ -182,7 +185,11 @@ internal sealed class ResultForm : Form
         try
         {
             KeepLines keep = new(ViewOptions.KeepLinesBefore, ViewOptions.KeepLinesAfter);
-            result = await SearchEngine.RunAsync(query, progress, search.Token, keep);
+            result = await SearchEngine.RunAsync(query, progress, search.Token, keep, scope.OnlyFiles);
+            if (scope.Problem is string problem)
+            {
+                result = result with { Problems = [problem, .. result.Problems] };
+            }
             fileList = FileListPage(result);
             matchingLines = MatchingLinesPage(result);
             endStatus = SearchStatus.Done(result);

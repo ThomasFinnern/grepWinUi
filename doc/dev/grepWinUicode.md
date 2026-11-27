@@ -282,6 +282,13 @@ No admin rights needed: nothing is written next to the exe.
   `chrome.webview.postMessage`). `ParseFileClick(json)` → index or null (other kind, broken JSON,
   negative / not whole number). `ScrollToFile(i)`: script that scrolls `file-i` to the top, nothing if
   it isn't on the page (e.g. cut after `MaxLines`).
+- `SearchScope` (step 31): `Of(query, current)` → `OnlyFiles` (paths of `current.Files` when
+  `query.OnlyInFilesOfCurrentResult` and there are files, else null = folders) and `Problem`
+  (`NoCurrentFilesProblem` when the option is set but there are no files: the folder is searched, as in
+  the old program). `SearchEngine.Run(…, onlyFiles)`: those files in their order, each once, missing ones
+  as problems ("File not found"), no folder walk and no file / folder / date filters (old program: same);
+  `SearchResult.InFilesOfPreviousResult` (last record parameter, default false, so older result files load)
+  → `Summary` "In the files of the previous result: found …".
 - `SearchStatus` (step 19): status bar texts of one result form, record `(Title, Info, Folder, Files,
   Time, IsRunning, Percent)`. `Idle` (all empty), `Running(query, progress, elapsed, showFileNames)`
   ("Searching '…'", current file as Info only if `showFileNames`, Folder = last name of the current
@@ -345,6 +352,12 @@ problems are ignored.
   (or the form with the same search; no dialog, no search);
   Save writes the active form's `Result` (greyed out without one; `ResultForm.ResultChanged` updates
   the menu). Both remember the file with `LastUsedFiles.RememberResultFile` (shared start folder).
+- `RestartSearch()` (Search → Restart search, Alt+R, step 31): active form → `RunSearchAsync` without dialog
+  (past queries unchanged); without one → `NewSearch()`.
+- `SearchInFiles()` (Search → Search in Files, step 31, `MainMenu.SearchInFilesName`, enabled only when the
+  active form's result has files, set in `UpdateMenuState`): `ShowSearchProperties(form, copy of the query
+  with OnlyInFilesOfCurrentResult = true)`; the tick is kept only on Exit / Start search (old program: set
+  before the dialog, kept on Cancel; without a form a message + New search).
 - `SaveSearchQuery()` (File → Save search query, Alt+S): active form's `Query` → file.
   Greyed out without an active result form (`UpdateMenuState` on `MdiChildActivate` and after a
   result form closes).
@@ -425,6 +438,9 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   returns what it found so far (`Cancelled = true`) and the panes show it, marked "cancelled".
   `ResultChanged` is raised at search start and end, so `MainForm.UpdateMenuState` enables
   Search → Cancel Search (`MainMenu.CancelSearchName`) only while the active form searches.
+- **Search in found files** (step 31): `RunSearchAsync` takes `SearchScope.Of(Query, Result)` at its start
+  (before `Result` is cleared), passes `OnlyFiles` to the engine and puts `Problem` first in the result's
+  problems; the "Searching …" hint names "the files of the previous result".
 - **Click on a file** (step 28): `OnFileListMessage` (`WebMessageReceived` of the file list pane) →
   `ResultPageScript.ParseFileClick` → `ExecuteScriptAsync(ScrollToFile(i))` on the matching lines pane.
   The file list page is not built again on view changes, so the marked row stays.
@@ -470,7 +486,7 @@ program, Search string token, File name token, Folder name token. Works on `AppC
   - File → New and program start without a result form: new empty result form with the dialog.
   - Planned: when the last forms are reopened on start, the dialog opens for the last active
     result form if Settings "Open search form" is set.
-  - Planned (old program): Search in Files = Search with "Only in files of current result" ticked.
+  - Search in Files (step 31) = Search with "Only in files of current result" ticked.
 - **Dialog buttons** (as in the old program): Exit writes back and puts search string, file names
   and folder on top of their lists; Start search (Enter) does the same and also adds the whole query
   to the past queries (later: starts the search); Cancel (Esc) discards. Lists are saved after each OK.
@@ -518,7 +534,6 @@ program, Search string token, File name token, Folder name token. Works on `AppC
 Taken from `netGrepWin.code.md`; details per step in the roadmap.
 
 - **File menu:** Open (select from last search queries), close this / all / all but this.
-- **Search menu:** Search in Files.
 - **Settings:** edit the two CSS files (step 33).
 - **MDI commands and keys** act on the active result form.
 - **Lists** are saved on each change.

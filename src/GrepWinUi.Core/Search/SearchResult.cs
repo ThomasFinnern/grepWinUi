@@ -11,6 +11,10 @@ namespace GrepWinUi.Core.Search;
 /// <param name="Duration">Time the search took.</param>
 /// <param name="Cancelled">True when the search was stopped; the result holds what was found until then.</param>
 /// <param name="Problems">Texts about things that went wrong (missing folder, unreadable file, …).</param>
+/// <param name="InFilesOfPreviousResult">
+/// True when only the files of the previous result were searched ("Only in files of current result"),
+/// not the folders; false in result files saved before step 31.
+/// </param>
 public sealed record SearchResult(
     SearchQuery Query,
     IReadOnlyList<FileResult> Files,
@@ -19,7 +23,8 @@ public sealed record SearchResult(
     int MatchCount,
     TimeSpan Duration,
     bool Cancelled,
-    IReadOnlyList<string> Problems);
+    IReadOnlyList<string> Problems,
+    bool InFilesOfPreviousResult = false);
 
 /// <summary>A file with its matching lines and the lines kept around them.</summary>
 /// <param name="Path">Full path of the file.</param>

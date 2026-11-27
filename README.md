@@ -64,6 +64,13 @@ redesign from start with the help of AI
   shows each file's path, then its lines (`000012: text`, hits in green). Problems (missing folder,
   unreadable file) are listed too. The other search options follow step by step (their names are
   still struck through).
+- **Search in found files:** tick **Only in files of current result** in the search properties dialog, or use
+  **Search → Search in Files** (it ticks the option and opens the dialog; greyed out while the active window
+  has no result with files). The next search reads only the files of the window's current result: folder,
+  file names and other file filters are not used then. The option stays ticked, so each further search
+  narrows the list. Without a current result the folder is searched (a note in the file list says so).
+- **Search → Restart search (Alt+R):** searches the active window's search again at once, without the dialog
+  (without a window: like New search query).
 - **File and folder filters** (search properties dialog, `[+]` of File names and Folder name):
   - **Several folders:** separate them with blanks in "Folder name"; put a folder with blanks in
     double quotes (`"d:\My Folder" e:\src`). A single folder with blanks also works without quotes.

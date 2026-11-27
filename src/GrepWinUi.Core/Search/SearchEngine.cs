@@ -22,13 +22,20 @@ public static class SearchEngine
     /// <param name="progress">Gets a report at most every <see cref="ProgressInterval"/> and at the end.</param>
     /// <param name="cancel">Stops the search; the result then has <see cref="SearchResult.Cancelled"/> set.</param>
     /// <param name="keep">Lines kept before / after each matching line (<see cref="FileResult.ContextLines"/>).</param>
+    /// <param name="onlyFiles">
+    /// Files to search instead of the folders of the query ("Only in files of current result", <see cref="SearchScope"/>):
+    /// read in this order, without folder walk and file / folder filters (as in the old program); a missing file
+    /// is a problem. Null: the folders and filters of the query.
+    /// </param>
     public static Task<SearchResult> RunAsync(
-        SearchQuery query, IProgress<SearchProgress>? progress, CancellationToken cancel, KeepLines keep = default) =>
-        Task.Run(() => Run(query.Copy(), progress, cancel, keep), CancellationToken.None);
+        SearchQuery query, IProgress<SearchProgress>? progress, CancellationToken cancel, KeepLines keep = default,
+        IReadOnlyList<string>? onlyFiles = null) =>
+        Task.Run(() => Run(query.Copy(), progress, cancel, keep, onlyFiles), CancellationToken.None);
 
     /// <summary>Searches on the calling thread (used by <see cref="RunAsync"/> and tests).</summary>
     public static SearchResult Run(
-        SearchQuery query, IProgress<SearchProgress>? progress, CancellationToken cancel, KeepLines keep = default)
+        SearchQuery query, IProgress<SearchProgress>? progress, CancellationToken cancel, KeepLines keep = default,
+        IReadOnlyList<string>? onlyFiles = null)
     {
         Stopwatch time = Stopwatch.StartNew();
         if (query.SearchString.Length == 0)
@@ -53,13 +60,20 @@ public static class SearchEngine
         TimeSpan lastReport = TimeSpan.Zero;
 
         IEnumerable<string> paths;
-        try
+        if (onlyFiles is not null)
         {
-            paths = finder.Find(query, cancel);
+            paths = ExistingFiles(onlyFiles, problems);
         }
-        catch (ArgumentException ex)
+        else
         {
-            return new SearchResult(query, [], 0, 0, 0, time.Elapsed, Cancelled: false, [$"Invalid regular expression: {ex.Message}"]);
+            try
+            {
+                paths = finder.Find(query, cancel);
+            }
+            catch (ArgumentException ex)
+            {
+                return new SearchResult(query, [], 0, 0, 0, time.Elapsed, Cancelled: false, [$"Invalid regular expression: {ex.Message}"]);
+            }
         }
         ResultMode mode = ResultMode.Of(query);
         int? totalFiles = null;
@@ -113,7 +127,30 @@ public static class SearchEngine
         progress?.Report(new SearchProgress(filesSearched, finder.FoldersSearched, files.Count, "", totalFiles));
         return new SearchResult(
             query, files, filesSearched, finder.FoldersSearched, matchCount, time.Elapsed,
-            cancel.IsCancellationRequested, [.. finder.Problems, .. problems]);
+            cancel.IsCancellationRequested, [.. finder.Problems, .. problems], InFilesOfPreviousResult: onlyFiles is not null);
+    }
+
+    /// <summary>The given files that still exist, each once (case ignored); a missing one is noted in <paramref name="problems"/>.</summary>
+    private static List<string> ExistingFiles(IReadOnlyList<string> files, List<string> problems)
+    {
+        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+        List<string> existing = [];
+        foreach (string file in files)
+        {
+            if (!seen.Add(file))
+            {
+                continue;
+            }
+            if (File.Exists(file))
+            {
+                existing.Add(file);
+            }
+            else
+            {
+                problems.Add($"File not found: '{file}'");
+            }
+        }
+        return existing;
     }
 
     /// <summary>

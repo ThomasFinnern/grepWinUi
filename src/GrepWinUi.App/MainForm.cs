@@ -22,6 +22,7 @@ public sealed partial class MainForm : Form
     private readonly ToolStripItem _saveQueryItem;
     private readonly ToolStripItem _saveResultItem;
     private readonly ToolStripItem _cancelSearchItem;
+    private readonly ToolStripItem _searchInFilesItem;
     private readonly MainStatusBar _statusBar = new();
     private Task<CoreWebView2Environment>? _webViewEnvironment;
     private int _resultFormCount;
@@ -48,7 +49,7 @@ public sealed partial class MainForm : Form
         IsMdiContainer = true;
 
         MenuStrip menuStrip = MainMenu.Create(new MainMenuActions(
-            OpenSettings, ExitApp, NewSearch, EditSearch, OpenSearchQuery, LoadSearchQuery, SaveSearchQuery,
+            OpenSettings, ExitApp, NewSearch, EditSearch, RestartSearch, SearchInFiles, OpenSearchQuery, LoadSearchQuery, SaveSearchQuery,
             OpenSearchResult, SaveSearchResult, CancelSearch,
             EditSearchStringTokens, EditFileNameTokens, EditFolderNameTokens, LayoutMdi));
         MainMenuStrip = menuStrip;
@@ -58,6 +59,7 @@ public sealed partial class MainForm : Form
         _saveQueryItem = menuStrip.Items.Find(MainMenu.SaveSearchQueryName, searchAllChildren: true).Single();
         _saveResultItem = menuStrip.Items.Find(MainMenu.SaveSearchResultName, searchAllChildren: true).Single();
         _cancelSearchItem = menuStrip.Items.Find(MainMenu.CancelSearchName, searchAllChildren: true).Single();
+        _searchInFilesItem = menuStrip.Items.Find(MainMenu.SearchInFilesName, searchAllChildren: true).Single();
         ToolStripMenuItem recentFilesMenu = (ToolStripMenuItem)menuStrip.Items.Find(MainMenu.RecentFilesName, searchAllChildren: true).Single();
         recentFilesMenu.DropDownOpening += (_, _) => FillRecentFilesMenu(recentFilesMenu);
         ToolStripMenuItem recentQueriesMenu = (ToolStripMenuItem)menuStrip.Items.Find(MainMenu.RecentQueriesName, searchAllChildren: true).Single();
@@ -77,6 +79,7 @@ public sealed partial class MainForm : Form
         _saveQueryItem.Enabled = ActiveMdiChild is ResultForm;
         _saveResultItem.Enabled = ActiveMdiChild is ResultForm { Result: not null };
         _cancelSearchItem.Enabled = ActiveMdiChild is ResultForm { IsSearching: true };
+        _searchInFilesItem.Enabled = ActiveMdiChild is ResultForm { Result.Files.Count: > 0 };
     }
 
     /// <summary>Status bar shows the status of the active result form; without one all fields are empty.</summary>
@@ -321,13 +324,45 @@ public sealed partial class MainForm : Form
     }
 
     /// <summary>
-    /// Search properties dialog, modal over <paramref name="form"/>, filled with its query and line counts.
-    /// Exit / Start search: the form takes over the edited values, the lists remember them and are saved
-    /// (Start search also remembers the whole query and starts the search). Cancel changes nothing.
+    /// Search → Restart search (Alt+R): the active result form searches its query again at once, without the
+    /// dialog (past queries unchanged); without one like File → New search query.
     /// </summary>
-    private void ShowSearchProperties(ResultForm form)
+    private void RestartSearch()
     {
-        using SearchPropertiesForm dialog = new(form.Query, form.ViewOptions, _lists, Config);
+        if (ActiveMdiChild is ResultForm form)
+        {
+            // Runs in the background; RunSearchAsync shows its own problems and never throws.
+            _ = form.RunSearchAsync(Config.ShowFileNamesWhileSearching);
+        }
+        else
+        {
+            NewSearch();
+        }
+    }
+
+    /// <summary>
+    /// Search → Search in Files (only when the active result form has a result with files): its search
+    /// properties dialog with "Only in files of current result" ticked (kept only on Exit / Start search).
+    /// </summary>
+    private void SearchInFiles()
+    {
+        if (ActiveMdiChild is ResultForm { Result.Files.Count: > 0 } form)
+        {
+            SearchQuery query = form.Query.Copy();
+            query.OnlyInFilesOfCurrentResult = true;
+            ShowSearchProperties(form, query);
+        }
+    }
+
+    /// <summary>
+    /// Search properties dialog, modal over <paramref name="form"/>, filled with its query (or
+    /// <paramref name="startQuery"/>) and line counts. Exit / Start search: the form takes over the edited values,
+    /// the lists remember them and are saved (Start search also remembers the whole query and starts the search).
+    /// Cancel changes nothing.
+    /// </summary>
+    private void ShowSearchProperties(ResultForm form, SearchQuery? startQuery = null)
+    {
+        using SearchPropertiesForm dialog = new(startQuery ?? form.Query, form.ViewOptions, _lists, Config);
         if (dialog.ShowDialog(form) != DialogResult.OK)
         {
             return;

@@ -35,7 +35,7 @@ internal sealed class SearchPropertiesForm : Form
     private readonly CheckBox _stopAfterFirstMatch = Check("First match per file only");
     private readonly CheckBox _filesWithNoMatch = Check("List files without match");
     private readonly CheckBox _linesWithNoMatch = Check("Non matching lines");
-    private readonly CheckBox _searchInFoundFiles = NoEffect(Check("Only in files of current result"));
+    private readonly CheckBox _searchInFoundFiles = Check("Only in files of current result");
     private readonly CheckBox _completeLine = Check("Match whole line");
     private readonly CheckBox _fileNamesOnly = Check("File names only (no lines)");
     private readonly CheckBox _fixedWidth = NoEffect(Check("Fixed-width field"));

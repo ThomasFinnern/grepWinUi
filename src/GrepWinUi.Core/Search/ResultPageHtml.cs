@@ -256,13 +256,16 @@ public static class ResultPageHtml
     }
 
     /// <summary>
-    /// E.g. "In files '*.cs': found 12 matches in 3 files from 57 files searched in folder 'c:\src' (0.4 s)"
+    /// E.g. "In files '*.cs': found 12 matches in 3 files from 57 files searched in folder 'c:\src' (0.4 s)",
+    /// or "In the files of the previous result: found …" (<see cref="SearchResult.InFilesOfPreviousResult"/>)
     /// (counts per result mode: <see cref="ResultMode.Counts"/>); " — cancelled" at the end when the search was stopped.
     /// </summary>
     public static string Summary(SearchResult result)
     {
-        string text = $"In files '{result.Query.FileNames}': found {ResultMode.Counts(result)} "
-            + $"in folder '{result.Query.FolderName}' ({result.Duration.TotalSeconds:0.0} s)";
+        string text = result.InFilesOfPreviousResult
+            ? $"In the files of the previous result: found {ResultMode.Counts(result)} ({result.Duration.TotalSeconds:0.0} s)"
+            : $"In files '{result.Query.FileNames}': found {ResultMode.Counts(result)} "
+                + $"in folder '{result.Query.FolderName}' ({result.Duration.TotalSeconds:0.0} s)";
         return result.Cancelled ? text + " — cancelled" : text;
     }
 
